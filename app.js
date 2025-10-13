@@ -1,15 +1,9 @@
 const express = require("express")
+require('dotenv').config()
 const mysql= require("mysql2")
-
+const PORT = process.env.PORT
 let bodyParser=require('body-parser')
 let app=express()
-let con=mysql.createConnection({
-    host:'localhost',
-    user:'root',
-    password:'n0m3l0',
-    database:'unnamed'
-})
-con.connect();
 
 app.use(bodyParser.json())
 
@@ -20,6 +14,6 @@ app.use(express.static('public'))
 app.get("/", (req, res) => {
     res.sendFile(__dirname + "/public/index.html");
 });
-app.listen(5000,()=>{
-    console.log('Servidor escuchando en el puerto 5000')
+            app.listen(PORT,()=>{
+                console.log('Servidor escuchando en el puerto  ' + PORT)
 })
