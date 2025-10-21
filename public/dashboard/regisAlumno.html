@@ -1,11 +1,91 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registrar Alumnos</title>
+    <title>Unnamed - Registrar Alumno</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/header.css">
 </head>
 <body>
-    
-</body>
+
+    <header class="main-header">
+        <div class="header-left">
+             <div class="header-icon-placeholder"></div>
+             <h1 class="header-title">Unnamed</h1>
+        </div>
+        <nav class="header-nav">
+            <a href="dataTutor.html">Datos Tutores</a>
+            <a href="dataAlumno.html">Datos Alumnos</a>
+            <a href="regisTutor.html">Añadir Tutor</a>
+            <a href="regisAlumno.html" class="active">Añadir Alumno</a> <a href="index.html">Dashboard</a>
+        </nav>
+        <div class="header-right">
+            <div id="theme-switcher-button" class="theme-switcher">
+                <div class="theme-icon"></div>
+            </div>
+        </div>
+    </header>
+
+    <main class="page-content">
+        <h2>Registrar Nuevo Alumno</h2>
+
+        <div class="form-container"> <form id="register-student-form" class="registration-form"> <div class="form-group">
+                    <label for="student-name">Nombre Completo</label>
+                    <input type="text" id="student-name" name="student-name" placeholder="Nombre(s) Apellido Paterno Apellido Materno" required>
+                    <small class="error-message"></small>
+                </div>
+
+                <div class="form-group">
+                    <label for="student-id">Boleta / Matrícula</label>
+                    <input type="text" id="student-id" name="student-id" placeholder="Identificador único" required>
+                    <small class="error-message"></small>
+                </div>
+
+                <div class="form-group">
+                    <label for="student-group">Grupo</label>
+                    <input type="text" id="student-group" name="student-group" placeholder="Ej: 5A, 1B" required>
+                    <small class="error-message"></small>
+                </div>
+
+                <div class="form-group">
+                    <label for="student-dob">Fecha de Nacimiento</label>
+                    <input type="date" id="student-dob" name="student-dob" required>
+                    <small class="error-message"></small>
+                </div>
+
+                 <div class="form-group">
+                    <label for="student-gender">Género</label>
+                    <select id="student-gender" name="student-gender" required>
+                        <option value="" disabled selected>Selecciona...</option>
+                        <option value="masculino">Masculino</option>
+                        <option value="femenino">Femenino</option>
+                        <option value="otro">Otro</option>
+                        <option value="no-especificar">Prefiero no especificar</option>
+                    </select>
+                    <small class="error-message"></small>
+                </div>
+
+                <div class="form-group">
+                    <label for="student-photo-url">URL de la Foto</label>
+                    <input type="url" id="student-photo-url" name="student-photo-url" placeholder="https://ejemplo.com/foto.jpg">
+                    <small class="error-message"></small>
+                </div>
+
+                <button type="submit" class="action-button submit-button">Registrar Alumno</button>
+
+            </form>
+        </div>
+    </main>
+
+    <footer class="main-footer">
+        <p>Endware Solutions 2025</p>
+    </footer>
+
+    <script src="../assets/js/theme-changer.js"></script>
+    <script src="../assets/js/input-validator.js"></script>
+    </body>
 </html>

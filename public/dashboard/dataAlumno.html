@@ -1,11 +1,103 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Datos de Alumnos</title>
-</head>
+    <title>Unnamed - Datos Alumnos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/style.css"> <link rel="stylesheet" href="../assets/css/header.css"> </head>
 <body>
-    
-</body>
+
+    <header class="main-header">
+        <div class="header-left">
+             <div class="header-icon-placeholder"></div>
+             <h1 class="header-title">Unnamed</h1>
+        </div>
+        <nav class="header-nav">
+            <a href="dataTutor.html">Datos Tutores</a>
+            <a href="dataAlumno.html" class="active">Datos Alumnos</a> <a href="regisTutor.html">Añadir Tutor</a>
+            <a href="regisAlumno.html">Añadir Alumno</a>
+            <a href="index.html">Dashboard</a>
+        </nav>
+        <div class="header-right">
+            <div id="theme-switcher-button" class="theme-switcher">
+                <div class="theme-icon"></div>
+            </div>
+        </div>
+    </header>
+
+    <main class="page-content">
+        <h2>Gestión de Alumnos</h2>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nombre Completo</th>
+                        <th>Grado</th>
+                        <th>Grupo</th>
+                        <th>Maestro Tutor</th>
+                        <th>Última Entrada</th>
+                        <th>Tutores</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>María Fernanda López García</td>
+                        <td>5to</td>
+                        <td>A</td>
+                        <td>Prof. Carlos Rivera</td>
+                        <td>21/10/2025 07:55 AM</td>
+                        <td><a href="dataTutor.html?searchStudent=María Fernanda López García" class="action-button tutor-link-button">Ver Tutores</a></td>
+                        <td><button class="action-button admin-button" data-item-id="A1">Administrar</button></td>
+                    </tr>
+                    <tr>
+                        <td>Pedro Antonio Gómez Sánchez</td>
+                        <td>6to</td>
+                        <td>B</td>
+                        <td>Profa. Laura Méndez</td>
+                        <td>21/10/2025 08:01 AM</td>
+                        <td><a href="dataTutor.html?searchStudent=Pedro Antonio Gómez Sánchez" class="action-button tutor-link-button">Ver Tutores</a></td>
+                        <td><button class="action-button admin-button" data-item-id="A2">Administrar</button></td>
+                    </tr>
+                    </tbody>
+            </table>
+        </div>
+
+    </main>
+
+    <footer class="main-footer">
+        <p>Endware Solutions 2025</p>
+    </footer>
+
+    <div id="crud-modal" class="modal">
+        <div class="modal-content">
+             <span class="close-button">&times;</span>
+             <h2>Administrar Alumno</h2>
+             <p>ID: <span id="modal-item-id"></span></p>
+             <form id="crud-item-form"> <div class="form-group">
+                     <label for="item-name">Nombre Completo</label>
+                     <input type="text" id="item-name" name="item-name" required>
+                     <small class="error-message"></small>
+                  </div>
+                  <div class="form-group">
+                     <label for="item-grade">Grado</label>
+                     <input type="text" id="item-grade" name="item-grade">
+                     <small class="error-message"></small>
+                  </div>
+                  <div class="form-group">
+                     <label for="item-group">Grupo</label>
+                     <input type="text" id="item-group" name="item-group">
+                     <small class="error-message"></small>
+                  </div>
+                  <button type="submit" class="action-button">Guardar</button>
+                  <button type="button" class="action-button delete-button">Eliminar</button>
+              </form>
+        </div>
+    </div>
+
+    <script src="../assets/js/theme-changer.js"></script> <script src="../assets/js/input-validator.js"></script> <script src="../assets/js/modal-handler.js"></script> </body>
 </html>
