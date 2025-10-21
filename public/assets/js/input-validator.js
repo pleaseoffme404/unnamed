@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchStudentNameInput = document.getElementById('search-student-name');
     const crudTutorForm = document.getElementById('crud-tutor-form');
     const registerStudentForm = document.getElementById('register-student-form'); 
+    const addAlertForm = document.getElementById('add-alert-form');
     const studentIdRegex = /^[a-zA-Z0-9\-]+$/; 
     const groupRegex = /^[a-zA-Z0-9]+$/; 
     const urlRegex = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/; 
@@ -178,5 +179,28 @@ document.addEventListener('DOMContentLoaded', () => {
         addValidationListeners(tutorNotificationSelect, null, 'Debes seleccionar un método.');
         addValidationListeners(tutorStudentInput, null, 'Debes indicar el alumno.'); 
         addValidationListeners(tutorPhotoUrlInput, urlRegex, 'URL inválida.');
+    }
+    if (addAlertForm) {
+        const alertMessageInput = document.getElementById('alert-message');
+        const alertPrioritySelect = document.getElementById('alert-priority');
+
+        const messageRegex = /.+/; 
+
+        addAlertForm.addEventListener('submit', (event) => {
+            const isMessageValid = validateInput(alertMessageInput, messageRegex, 'El mensaje no puede estar vacío.');
+            const isPriorityValid = validateInput(alertPrioritySelect, null, 'Debes seleccionar una prioridad.');
+
+            if (!isMessageValid || !isPriorityValid) {
+                event.preventDefault();
+                console.log('Envío de nueva alerta bloqueado por validación.');
+            } else {
+                 console.log('Validación de nueva alerta OK (simulado). Enviando...');
+                 event.preventDefault(); 
+                 addAlertForm.reset();
+            }
+        });
+
+        addValidationListeners(alertMessageInput, messageRegex, 'El mensaje no puede estar vacío.');
+        addValidationListeners(alertPrioritySelect, null, 'Debes seleccionar una prioridad.');
     }
 });

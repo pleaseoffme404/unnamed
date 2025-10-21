@@ -10,6 +10,11 @@
     --accent-red: #cf222e;
     --font-family-main: "Raleway", sans-serif;
     --error-color: var(--accent-red);
+    --priority-urgent-color: #e53e3e;
+    --priority-moderada-color: #dd6b20; 
+    --priority-baja-color: #38a169; 
+    --switch-bg-off: var(--bg-tertiary);
+    --switch-bg-on: var(--accent-primary);
 }
 
 body.light-theme {
@@ -23,6 +28,11 @@ body.light-theme {
     --accent-green: #2da44e;
     --accent-red: #cf222e;
     --error-color: var(--accent-red);
+    --priority-urgent-color: #c53030;
+    --priority-moderada-color: #c05621;
+    --priority-baja-color: #2f855a;
+    --switch-bg-off: var(--bg-tertiary);
+    --switch-bg-on: var(--accent-primary);
 }
 
 * {
@@ -475,4 +485,161 @@ td .action-button {
     font-size: 11px;
     text-decoration: none;
     display: inline-block; 
+}
+.alerts-list-container {
+    margin-top: 30px;
+    background-color: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid var(--bg-tertiary);
+}
+
+.alerts-list-container h3 {
+    margin-bottom: 20px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--bg-tertiary);
+    padding-bottom: 10px;
+}
+
+/* --- Item de Alerta Individual --- */
+.alert-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px 10px;
+    border-bottom: 1px solid var(--bg-tertiary);
+    transition: background-color 0.2s ease;
+}
+.alert-item:last-child {
+    border-bottom: none;
+}
+.alert-item:hover {
+     background-color: var(--bg-primary); /* Sutil hover */
+}
+
+/* Indicador de Prioridad */
+.alert-priority {
+    width: 10px; /* Ancho de la barra de color */
+    height: 40px; /* Altura que coincida con el contenido aprox */
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+.priority-urgente { background-color: var(--priority-urgent-color); }
+.priority-moderada { background-color: var(--priority-moderada-color); }
+.priority-baja { background-color: var(--priority-baja-color); }
+
+.alert-content {
+    flex-grow: 1;
+}
+.alert-text {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text-primary);
+    line-height: 1.5;
+}
+.alert-item.editing .alert-text { display: none; }
+.alert-item.editing .alert-edit-message,
+.alert-item.editing .alert-edit-priority { display: block; }
+
+.alert-edit-message {
+     width: 100%;
+     padding: 8px;
+     border: 1px solid var(--bg-tertiary);
+     border-radius: 6px;
+     font-size: 14px;
+     font-family: var(--font-family-main);
+     background: var(--bg-primary);
+
+     color: var(--text-primary);
+     resize: vertical; 
+     min-height: 50px;
+     margin-bottom: 5px; 
+}
+.alert-edit-priority {
+     padding: 6px 10px;
+     border: 1px solid var(--bg-tertiary);
+     border-radius: 6px;
+     font-size: 13px;
+     font-family: var(--font-family-main);
+     background: var(--bg-primary);
+     color: var(--text-primary);
+     outline: none;
+}
+
+
+.alert-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.visibility-toggle-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 25px; 
+}
+.visibility-toggle-group label:first-of-type { 
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+.visibility-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 20px; 
+}
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--switch-bg-off);
+  transition: .4s;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 14px; 
+  width: 14px; 
+  left: 3px; 
+  bottom: 3px; 
+  background-color: white;
+  transition: .4s;
+}
+input:checked + .slider {
+  background-color: var(--switch-bg-on);
+}
+input:focus + .slider {
+  box-shadow: 0 0 1px var(--switch-bg-on);
+}
+input:checked + .slider:before {
+  transform: translateX(20px); 
+}
+.slider.round { border-radius: 20px; } 
+.slider.round:before { border-radius: 50%; }
+
+.small-switch { width: 34px; height: 17px; }
+.small-switch .slider:before { height: 11px; width: 11px; left: 3px; bottom: 3px; }
+.small-switch input:checked + .slider:before { transform: translateX(17px); }
+
+
+.small-button {
+    padding: 5px 10px;
+    font-size: 12px;
 }

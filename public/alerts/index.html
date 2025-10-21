@@ -1,11 +1,153 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Envio de Anuncios</title>
+    <title>Unnamed - Gestión de Alertas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/header.css">
 </head>
 <body>
-    
-</body>
+
+    <header class="main-header">
+        <div class="header-left">
+             <div class="header-icon-placeholder"></div>
+             <h1 class="header-title">Unnamed</h1>
+        </div>
+        <nav class="header-nav">
+             <a href="dataTutor.html">Datos Tutores</a>
+             <a href="dataAlumno.html">Datos Alumnos</a>
+             <a href="regisTutor.html">Añadir Tutor</a>
+             <a href="regisAlumno.html">Añadir Alumno</a>
+             <a href="alerts.html" class="active">Alertas</a> <a href="index.html">Dashboard</a>
+        </nav>
+        <div class="header-right">
+            <div id="theme-switcher-button" class="theme-switcher">
+                <div class="theme-icon"></div>
+            </div>
+        </div>
+    </header>
+
+    <main class="page-content">
+        <h2>Gestión de Alertas</h2>
+
+        <div class="form-container add-alert-form-container">
+            <h3>Crear Nueva Alerta</h3>
+            <form id="add-alert-form" class="registration-form">
+                <div class="form-group">
+                    <label for="alert-message">Mensaje de la Alerta</label>
+                    <textarea id="alert-message" name="alert-message" rows="3" placeholder="Escribe el mensaje aquí..." required></textarea>
+                    <small class="error-message"></small>
+                </div>
+                <div class="form-group">
+                    <label for="alert-priority">Prioridad</label>
+                    <select id="alert-priority" name="alert-priority" required>
+                        <option value="" disabled selected>Selecciona...</option>
+                        <option value="baja">Baja</option>
+                        <option value="moderada">Moderada</option>
+                        <option value="urgente">Urgente</option>
+                    </select>
+                    <small class="error-message"></small>
+                </div>
+                 <div class="form-group visibility-toggle-group">
+                     <label>Visibilidad Inicial:</label>
+                     <label class="switch">
+                         <input type="checkbox" id="alert-visible" name="alert-visible" checked>
+                         <span class="slider round"></span>
+                     </label>
+                     <span class="visibility-label">Visible</span>
+                 </div>
+                <button type="submit" class="action-button submit-button">Añadir Alerta</button>
+            </form>
+        </div>
+
+        <div class="alerts-list-container">
+            <h3>Alertas Recientes</h3>
+            <div class="alert-item" data-alert-id="1">
+                <div class="alert-priority priority-urgente"></div>
+                <div class="alert-content">
+                    <p class="alert-text">Mensaje de alerta urgente de ejemplo.</p>
+                     <textarea class="alert-edit-message" style="display: none;">Mensaje de alerta urgente de ejemplo.</textarea>
+                     <select class="alert-edit-priority" style="display: none;">
+                         <option value="baja">Baja</option>
+                         <option value="moderada">Moderada</option>
+                         <option value="urgente" selected>Urgente</option>
+                     </select>
+                </div>
+                <div class="alert-actions">
+                    <div class="visibility-toggle">
+                        <label class="switch small-switch">
+                            <input type="checkbox" checked class="visibility-checkbox">
+                            <span class="slider round"></span>
+                         </label>
+                    </div>
+                    <button class="action-button edit-button small-button">Editar</button>
+                    <button class="action-button save-button small-button" style="display: none;">Guardar</button>
+                    <button class="action-button cancel-button small-button" style="display: none;">Cancelar</button>
+                    <button class="action-button delete-button small-button">Eliminar</button>
+                </div>
+            </div>
+
+            <div class="alert-item" data-alert-id="2">
+                 <div class="alert-priority priority-moderada"></div>
+                 <div class="alert-content">
+                    <p class="alert-text">Alerta de prioridad moderada. Revisar pendientes.</p>
+                    <textarea class="alert-edit-message" style="display: none;">Alerta de prioridad moderada. Revisar pendientes.</textarea>
+                     <select class="alert-edit-priority" style="display: none;">
+                         <option value="baja">Baja</option>
+                         <option value="moderada" selected>Moderada</option>
+                         <option value="urgente">Urgente</option>
+                     </select>
+                 </div>
+                 <div class="alert-actions">
+                     <div class="visibility-toggle">
+                         <label class="switch small-switch">
+                            <input type="checkbox" checked class="visibility-checkbox">
+                             <span class="slider round"></span>
+                          </label>
+                     </div>
+                     <button class="action-button edit-button small-button">Editar</button>
+                     <button class="action-button save-button small-button" style="display: none;">Guardar</button>
+                     <button class="action-button cancel-button small-button" style="display: none;">Cancelar</button>
+                     <button class="action-button delete-button small-button">Eliminar</button>
+                 </div>
+            </div>
+
+            <div class="alert-item" data-alert-id="3">
+                 <div class="alert-priority priority-baja"></div>
+                 <div class="alert-content">
+                     <p class="alert-text">Recordatorio de baja prioridad.</p>
+                     <textarea class="alert-edit-message" style="display: none;">Recordatorio de baja prioridad.</textarea>
+                      <select class="alert-edit-priority" style="display: none;">
+                          <option value="baja" selected>Baja</option>
+                          <option value="moderada">Moderada</option>
+                          <option value="urgente">Urgente</option>
+                      </select>
+                 </div>
+                 <div class="alert-actions">
+                      <div class="visibility-toggle">
+                         <label class="switch small-switch">
+                             <input type="checkbox" class="visibility-checkbox"> <span class="slider round"></span>
+                          </label>
+                     </div>
+                     <button class="action-button edit-button small-button">Editar</button>
+                     <button class="action-button save-button small-button" style="display: none;">Guardar</button>
+                     <button class="action-button cancel-button small-button" style="display: none;">Cancelar</button>
+                     <button class="action-button delete-button small-button">Eliminar</button>
+                 </div>
+            </div>
+             </div>
+
+    </main>
+
+    <footer class="main-footer">
+        <p>Endware Solutions 2025</p>
+    </footer>
+
+    <script src="../assets/js/theme-changer.js"></script>
+    <script src="../assets/js/input-validator.js"></script>
+    <script src="../assets/js/alerts-manager.js"></script> </body>
 </html>
