@@ -502,7 +502,6 @@ td .action-button {
     padding-bottom: 10px;
 }
 
-/* --- Item de Alerta Individual --- */
 .alert-item {
     display: flex;
     align-items: center;
@@ -515,13 +514,12 @@ td .action-button {
     border-bottom: none;
 }
 .alert-item:hover {
-     background-color: var(--bg-primary); /* Sutil hover */
+     background-color: var(--bg-primary); 
 }
 
-/* Indicador de Prioridad */
 .alert-priority {
-    width: 10px; /* Ancho de la barra de color */
-    height: 40px; /* Altura que coincida con el contenido aprox */
+    width: 10px; 
+    height: 40px;
     border-radius: 4px;
     flex-shrink: 0;
 }
@@ -642,4 +640,55 @@ input:checked + .slider:before {
 .small-button {
     padding: 5px 10px;
     font-size: 12px;
+}
+.form-group textarea {
+    width: 100%;
+    padding: 12px 15px; 
+    border: 1px solid var(--bg-tertiary);
+    border-radius: 8px; 
+    font-size: 16px;
+    font-family: var(--font-family-main);
+    transition: all 0.3s ease;
+    outline: none;
+    background: var(--bg-primary); 
+    color: var(--text-primary); 
+    resize: vertical; 
+    min-height: 80px; 
+}
+.form-group textarea::placeholder {
+    color: var(--text-secondary); /* Usa variable */
+    opacity: 0.7;
+}
+
+.form-group textarea:focus {
+    border-color: var(--accent-primary); /* Usa variable */
+    box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.2); /* Mismo shadow que input */
+}
+
+.form-group textarea.is-invalid {
+    border-color: var(--error-color); /* Usa variable */
+}
+
+.form-group textarea.is-invalid:focus {
+     box-shadow: 0 0 0 3px rgba(207, 34, 46, 0.2); 
+}
+
+.alert-edit-message {
+     width: 100%;
+     padding: 8px; 
+     border: 1px solid var(--bg-tertiary);
+     border-radius: 6px; /* Coincide con .alert-edit-priority */
+     font-size: 14px; /* Coincide con .alert-text */
+     font-family: var(--font-family-main);
+     background: var(--bg-primary); /* Usa variable */
+     color: var(--text-primary); /* Usa variable */
+     resize: vertical;
+     min-height: 50px;
+     margin-bottom: 5px;
+     outline: none;
+     transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.alert-edit-message:focus {
+    border-color: var(--accent-primary);
+     box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.2);
 }
