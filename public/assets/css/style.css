@@ -656,17 +656,17 @@ input:checked + .slider:before {
     min-height: 80px; 
 }
 .form-group textarea::placeholder {
-    color: var(--text-secondary); /* Usa variable */
+    color: var(--text-secondary); 
     opacity: 0.7;
 }
 
 .form-group textarea:focus {
-    border-color: var(--accent-primary); /* Usa variable */
-    box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.2); /* Mismo shadow que input */
+    border-color: var(--accent-primary); 
+    box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.2); 
 }
 
 .form-group textarea.is-invalid {
-    border-color: var(--error-color); /* Usa variable */
+    border-color: var(--error-color); 
 }
 
 .form-group textarea.is-invalid:focus {
@@ -677,11 +677,11 @@ input:checked + .slider:before {
      width: 100%;
      padding: 8px; 
      border: 1px solid var(--bg-tertiary);
-     border-radius: 6px; /* Coincide con .alert-edit-priority */
-     font-size: 14px; /* Coincide con .alert-text */
+     border-radius: 6px; 
+     font-size: 14px; 
      font-family: var(--font-family-main);
-     background: var(--bg-primary); /* Usa variable */
-     color: var(--text-primary); /* Usa variable */
+     background: var(--bg-primary); 
+     color: var(--text-primary); 
      resize: vertical;
      min-height: 50px;
      margin-bottom: 5px;
@@ -691,4 +691,7 @@ input:checked + .slider:before {
 .alert-edit-message:focus {
     border-color: var(--accent-primary);
      box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.2);
+}
+select{
+ background-color: var(--bg-tertiary);   
 }
