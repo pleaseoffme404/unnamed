@@ -113,25 +113,24 @@ body:not(.light-theme) .theme-icon {
     max-width: 400px;
     width: 100%;
     border: 1px solid var(--bg-tertiary);
-    padding-top: 30px; /* Added padding to make space for logo */
+    padding-top: 30px; 
 }
 
-.login-logo-placeholder { /* Style for the new logo placeholder */
+.login-logo-placeholder {
     width: 50px;
     height: 50px;
-    background-color: var(--bg-tertiary); /* Placeholder color */
-    border-radius: 8px; /* Slightly rounded corners */
-    margin: 0 auto 20px auto; /* Centered with bottom margin */
-    /* Add background-image: url('path/to/your/logo.png'); here */
+    background-color: var(--bg-tertiary); 
+    border-radius: 8px; 
+    margin: 0 auto 20px auto; 
+    
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
 }
 
 .login-header {
-    padding: 20px 30px 30px 30px; /* Adjusted top padding */
+    padding: 20px 30px 30px 30px;
     text-align: center;
-    background-color: rgba(0, 0, 0, 0.1);
 }
 
 .login-header h2 {
