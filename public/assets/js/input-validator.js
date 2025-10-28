@@ -14,6 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     const phoneRegex = /^[0-9]{10}$/;
     const potentiallyHarmfulCharsRegex = /[<>"'`{};()/\\]|--|\/\*|\*\/|drop |delete |insert |update |script/i;
+    const searchHistoryNameInput = document.getElementById('search-history-name');
+    const searchHistoryIdInput = document.getElementById('search-history-id');
 
     const validateInput = (inputElement, regex, errorMessage, allowEmpty = false) => {
         if (!inputElement) return true;
@@ -92,6 +94,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     addValidationListeners(searchTutorNameInput, nameRegex, 'Solo se permiten letras y espacios.');
     addValidationListeners(searchStudentNameInput, nameRegex, 'Solo se permiten letras y espacios.');
+    addValidationListeners(searchHistoryNameInput, nameRegex, 'Solo se permiten letras y espacios.');
+    addValidationListeners(searchHistoryIdInput, studentIdRegex, 'Boleta inválida.');
 
     if (crudTutorForm) {
         const tutorNameInput = document.getElementById('tutor-name');
@@ -202,5 +206,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
         addValidationListeners(alertMessageInput, messageRegex, 'El mensaje no puede estar vacío.');
         addValidationListeners(alertPrioritySelect, null, 'Debes seleccionar una prioridad.');
+    }
+    const searchByNameBtn = document.getElementById('search-by-name-btn');
+    const searchByIdBtn = document.getElementById('search-by-id-btn');
+
+    if (searchByNameBtn && searchHistoryNameInput) {
+        searchByNameBtn.addEventListener('click', (event) => {
+             if (!validateInput(searchHistoryNameInput, nameRegex, 'Solo se permiten letras y espacios.')) {
+                 console.log("Búsqueda por nombre bloqueada por validación.");
+             } else {
+                 console.log("Validación de búsqueda por nombre OK.");
+             }
+        });
+    }
+     if (searchByIdBtn && searchHistoryIdInput) {
+        searchByIdBtn.addEventListener('click', (event) => {
+             if (!validateInput(searchHistoryIdInput, studentIdRegex, 'Boleta inválida.')) {
+                  console.log("Búsqueda por boleta bloqueada por validación.");
+             } else {
+                  console.log("Validación de búsqueda por boleta OK.");
+             }
+        });
     }
 });

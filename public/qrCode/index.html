@@ -1,11 +1,86 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generador QR</title>
+    <title>Unnamed - Escanear QR</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/header.css">
 </head>
 <body>
-    
+
+    <header class="main-header qr-header">
+        <div class="header-left">
+             <button id="back-to-dashboard-secure" class="header-back-button">Volver a Dashboard</button>
+        </div>
+        <div class="header-center">
+            <span id="header-clock" class="header-clock-display">00:00:00</span>
+        </div>
+        <div class="header-right">
+            <div id="theme-switcher-button" class="theme-switcher">
+                <div class="theme-icon"></div>
+            </div>
+        </div>
+    </header>
+
+    <main class="page-content qr-page-layout"> <section class="qr-left-column">
+            <h2>Escanear Código</h2>
+            <div class="qr-code-wrapper">
+                 <img src="../assets/img/qrCode/placeholder.png" alt="Código QR para registro" id="qr-code-image">
+            </div>
+            <p class="qr-instructions">Apunta la cámara de tu dispositivo al código.</p>
+            <button id="simulate-scan-btn" class="action-button small-button" style="margin-top: 20px;">Simular Escaneo</button>
+        </section>
+
+        <section class="qr-right-column">
+            <h2>Información Registrada</h2>
+            <div id="scan-results" class="scan-results-container">
+                <div class="scan-user-info">
+                    <div class="user-photo-placeholder"></div>
+                    <p class="user-name-group"><strong id="user-name">Nombre Apellido</strong> (<span id="user-group">Grupo</span>)</p>
+                    <p class="user-schedule">Horario: <span id="user-schedule-time">00:00 - 00:00</span></p>
+                    <p><span id="user-status" class="scan-status"></span></p>
+                </div>
+
+                <hr class="section-divider">
+
+                <div class="scan-vehicle-info">
+                     <div class="vehicle-photo-placeholder"></div>
+                     <p class="vehicle-details"><span id="vehicle-color">Color</span> - <span id="vehicle-type">Tipo/Marca</span></p>
+                </div>
+
+                 <p id="waiting-scan-message" class="waiting-message">Esperando escaneo...</p>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="main-footer">
+        <p>Endware Solutions 2025</p>
+    </footer>
+
+    <div id="reauth-modal" class="modal">
+        <div class="modal-content reauth-modal-content">
+            <span class="close-button" id="reauth-close-button">&times;</span>
+            <h2>Verificar Identidad</h2>
+            <p>Por seguridad, ingresa tu contraseña para continuar al dashboard.</p>
+            <form id="reauth-form">
+                <div class="form-group">
+                    <label for="reauth-password">Contraseña</label>
+                    <input type="password" id="reauth-password" name="reauth-password" required placeholder="••••••••">
+                    <small class="error-message" id="reauth-error-message"></small>
+                </div>
+                <button type="submit" id="reauth-submit" class="action-button submit-button">Verificar y Continuar</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="../assets/js/theme-changer.js"></script>
+    <script src="../assets/js/input-validator.js"></script>
+    <script src="../assets/js/qrCode-manager.js"></script>
+
 </body>
 </html>

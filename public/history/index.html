@@ -1,11 +1,142 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Historial de Entradas de Usuarios</title>
+    <title>Unnamed - Historial de Entradas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/header.css">
 </head>
 <body>
-    
-</body>
+
+    <header class="main-header">
+        <div class="header-left">
+             <div class="header-icon-placeholder"></div>
+             <h1 class="header-title">Unnamed</h1>
+        </div>
+        <nav class="header-nav">            
+            <a href="../qrCode/index.html">Scan QR</a>
+            <a href="../dashboard/dataTutor.html">Datos Tutores</a>
+            <a href="../dashboard/dataAlumno.html" >Datos Alumnos</a>
+            <a href="../dashboard/regisTutor.html">Añadir Tutor</a>
+            <a href="../dashboard/regisAlumno.html">Añadir Alumno</a>
+            <a href="../alerts/index.html">Alertas</a> 
+            <a href="index.html" class="active">Historial</a> 
+            <a href="../dashboard/index.html" >Dashboard</a> </nav>
+        <div class="header-right">
+            <div id="theme-switcher-button" class="theme-switcher">
+                <div class="theme-icon"></div>
+            </div>
+        </div>
+    </header>
+
+    <main class="page-content">
+        <h2>Historial de Entradas y Salidas</h2>
+
+        <div class="dashboard-row search-row history-search-row">
+            <div class="dashboard-col">
+                <label for="search-history-name" class="search-label">Buscar por Nombre Completo:</label>
+                <div class="search-bar-container">
+                    <input type="text" id="search-history-name" placeholder="Nombre del alumno..." class="search-input">
+                    <button id="search-by-name-btn" class="search-button">Buscar</button>
+                    <small class="error-message"></small>
+                </div>
+            </div>
+            <div class="dashboard-col">
+                 <label for="search-history-id" class="search-label">Buscar por Boleta:</label>
+                 <div class="search-bar-container">
+                    <input type="text" id="search-history-id" placeholder="Boleta del alumno..." class="search-input">
+                    <button id="search-by-id-btn" class="search-button">Buscar</button>
+                    <small class="error-message"></small>
+                </div>
+            </div>
+        </div>
+
+        <div id="recent-history-section" class="table-section">
+            <h3>Registros Recientes</h3>
+            <div class="table-container">
+                <table id="recent-history-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Grupo</th>
+                            <th>Última Hora de Registro</th>
+                            <th>Último Tipo</th>
+                            <th>Status</th>
+                            <th>Contactar Tutor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Ana Sofía Ramírez Díaz</td>
+                            <td>6A</td>
+                            <td>28/10/2025 06:58 AM</td>
+                            <td>Entrada</td>
+                            <td><span class="status-badge status-normal">Normal</span></td>
+                            <td><a href="../dashboard/dataTutor.html?searchStudentId=ASRD001" class="action-button small-button">Contactar</a></td>
+                        </tr>
+                        <tr>
+                            <td>Luis Ángel Morales Cruz</td>
+                            <td>5B</td>
+                             <td>28/10/2025 07:15 AM</td>
+                             <td>Entrada</td>
+                            <td><span class="status-badge status-late">Retardo</span></td>
+                            <td><a href="../dashboard/dataTutor.html?searchStudentId=LAMC002" class="action-button small-button">Contactar</a></td>
+                        </tr>
+                        <tr>
+                            <td>Valeria Jiménez Herrera</td>
+                            <td>4C</td>
+                            <td>27/10/2025 02:30 PM</td> <td>Salida</td>
+                             <td><span class="status-badge status-absent">Falta</span></td>
+                             <td><a href="../dashboard/dataTutor.html?searchStudentId=VJH003" class="action-button small-button">Contactar</a></td>
+                        </tr>
+                        <tr><td>Estudiante Ejemplo 4</td><td>6A</td><td>28/10/2025 06:55 AM</td><td>Entrada</td><td><span class="status-badge status-normal">Normal</span></td><td><a href="#" class="action-button small-button">Contactar</a></td></tr>
+                         <tr><td>Estudiante Ejemplo 5</td><td>5B</td><td>28/10/2025 06:59 AM</td><td>Entrada</td><td><span class="status-badge status-normal">Normal</span></td><td><a href="#" class="action-button small-button">Contactar</a></td></tr>
+                         <tr><td>Estudiante Ejemplo 6</td><td>4C</td><td>28/10/2025 07:05 AM</td><td>Entrada</td><td><span class="status-badge status-late">Retardo</span></td><td><a href="#" class="action-button small-button">Contactar</a></td></tr>
+                         <tr><td>Estudiante Ejemplo 7</td><td>6A</td><td>27/10/2025 02:35 PM</td><td>Salida</td><td><span class="status-badge status-absent">Falta</span></td><td><a href="#" class="action-button small-button">Contactar</a></td></tr>
+                         <tr><td>...</td><td>...</td><td>...</td><td>...</td><td>...</td><td><a href="#" class="action-button small-button">Contactar</a></td></tr>
+                         <tr><td>...</td><td>...</td><td>...</td><td>...</td><td>...</td><td><a href="#" class="action-button small-button">Contactar</a></td></tr>
+                          <tr><td>Estudiante Ejemplo 20</td><td>5B</td><td>28/10/2025 06:40 AM</td><td>Entrada</td><td><span class="status-badge status-normal">Normal</span></td><td><a href="#" class="action-button small-button">Contactar</a></td></tr>
+                    </tbody>
+                </table>
+            </div>
+             <div class="pagination">
+                <button class="pagination-button" disabled>&laquo; Anterior</button>
+                <span class="page-info">Página 1 de X</span>
+                <button class="pagination-button">Siguiente &raquo;</button>
+            </div>
+        </div>
+
+        <div id="search-results-section" class="table-section" style="display: none;">
+            <h3>Resultados de Búsqueda</h3>
+             <button id="back-to-recent-btn" class="action-button small-button back-button">Volver a Recientes</button>
+            <div class="table-container">
+                <table id="search-results-table">
+                    <thead>
+                         <tr> <th>Nombre</th>
+                            <th>Grupo</th>
+                            <th>Hora de Registro</th>
+                            <th>Tipo</th>
+                            <th>Status</th>
+                            <th>Contactar Tutor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+            </div>
+             </div>
+
+    </main>
+
+    <footer class="main-footer">
+        <p>Endware Solutions 2025</p>
+    </footer>
+
+    <script src="../assets/js/theme-changer.js"></script>
+    <script src="../assets/js/input-validator.js"></script>
+    <script src="../assets/js/history-manager.js"></script> </body>
 </html>

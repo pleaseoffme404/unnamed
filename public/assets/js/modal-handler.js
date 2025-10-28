@@ -28,7 +28,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         adminButtons.forEach(button => {
             button.addEventListener('click', () => {
-                // Intenta obtener un ID específico del botón, p.ej. data-tutor-id
                 const itemId = button.getAttribute('data-tutor-id') || button.getAttribute('data-item-id') || 'N/A';
                 openModal(itemId);
             });
