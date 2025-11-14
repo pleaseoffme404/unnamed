@@ -68,13 +68,51 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loginForm) {
         const userInput = document.getElementById('user');
         const passwordInput = document.getElementById('password');
+        const loginErrorMessage = document.getElementById('login-error-message');
 
-        loginForm.addEventListener('submit', (event) => {
+        loginForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            if (loginErrorMessage) loginErrorMessage.textContent = '';
+            
             const isUserValid = validateInput(userInput, alphanumericRegex, 'Solo se permiten letras y números.');
             const isPasswordValid = validateInput(passwordInput, null, 'Caracteres no permitidos detectados.');
 
             if (!isUserValid || !isPasswordValid) {
-                event.preventDefault();
+                return;
+            }
+
+            const username = userInput.value;
+            const password = passwordInput.value;
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    console.log('Login exitoso, redirigiendo...');
+                    window.location.href = '/dashboard/index.html';
+                } else {
+                    if (loginErrorMessage) {
+                        loginErrorMessage.textContent = data.message || 'Error al iniciar sesión.';
+                    }
+                    if (response.status === 404 || response.status === 401) {
+                         userInput.classList.add('is-invalid');
+                         passwordInput.classList.add('is-invalid');
+                    }
+                }
+            } catch (error) {
+                console.error('Error de red:', error);
+                if (loginErrorMessage) {
+                    loginErrorMessage.textContent = 'Error de conexión. Intenta de nuevo.';
+                }
             }
         });
 
