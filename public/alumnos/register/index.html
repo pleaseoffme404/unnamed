@@ -3,106 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Unnamed - Registrar Alumno</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../assets/css/style.css">
-    <link rel="stylesheet" href="../assets/css/header.css">
+    <title>Registrar Alumno - Unnamed</title>
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="/assets/css/header.css">
 </head>
 <body>
 
-    <header class="main-header">
-        <div class="header-left">
-             <div class="header-icon-placeholder"></div>
-             <h1 class="header-title">Unnamed</h1>
-        </div>
-        <nav class="header-nav">            
-            <a href="../qrCode/index.html">Scan QR</a>
-            <a href="dataTutor.html">Datos Tutores</a>
-            <a href="dataAlumno.html" >Datos Alumnos</a>
-            <a href="regisTutor.html">Añadir Tutor</a>
-            <a href="regisAlumno.html" class="active">Añadir Alumno</a>
-            <a href="../alerts/index.html">Alertas</a> 
-            <a href="../history/index.html">Historial</a> 
-            <a href="index.html" >Dashboard</a> </nav>
-        <div class="header-right">
-            <svg id="switcher" class="switcher" aria-hidden="true" width="24" height="24" viewBox="0 0 24 24">
-                <circle class="switcher__sun" cx="12" cy="12" r="6" mask="url(#moon-mask)" fill="currentColor" />
-                <g class="switcher__sun-beams" stroke="currentColor">
-                    <line x1="12" y1="1" x2="12" y2="3" />
-                    <line x1="12" y1="21" x2="12" y2="23" />
-                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-                    <line x1="1" y1="12" x2="3" y2="12" />
-                    <line x1="21" y1="12" x2="23" y2="12" />
-                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-                </g>
-                <mask id="moon-mask">
-                    <rect x="0" y="0" width="100%" height="100%" fill="white" />
-                    <circle class="switcher__moon" cx="24" cy="10" r="6" fill="black" />
-                </mask>
-            </svg>
-        </div>
-    </header>
+    <header class="main-header"></header>
 
-    <main class="page-content">
-        <h2>Registrar Nuevo Alumno</h2>
-
-        <div class="form-container"> <form id="register-student-form" class="registration-form"> <div class="form-group">
-                    <label for="student-name">Nombre Completo</label>
-                    <input type="text" id="student-name" name="student-name" placeholder="Nombre(s) Apellido Paterno Apellido Materno" required>
-                    <small class="error-message"></small>
+    <main class="auth-page-wrapper">
+        <div class="auth-container" style="max-width: 450px;">
+            <h2>Registrar Nuevo Alumno</h2>
+            
+            <form id="register-student-form" novalidate enctype="multipart/form-data">
+                
+                <div class="user-box">
+                    <input type="text" id="nombre_completo" name="nombre_completo" required placeholder=" ">
+                    <label for="nombre_completo">Nombre Completo</label>
                 </div>
 
-                <div class="form-group">
-                    <label for="student-id">Boleta / Matrícula</label>
-                    <input type="text" id="student-id" name="student-id" placeholder="Identificador único" required>
-                    <small class="error-message"></small>
+                <div class="user-box">
+                    <input type="text" id="boleta" name="boleta" required placeholder=" ">
+                    <label for="boleta">Boleta / Matrícula</label>
                 </div>
 
-                <div class="form-group">
-                    <label for="student-group">Grupo</label>
-                    <input type="text" id="student-group" name="student-group" placeholder="Ej: 5A, 1B" required>
-                    <small class="error-message"></small>
+                <div class="user-box">
+                    <input type="text" id="grupo_id" name="grupo_id" required placeholder=" ">
+                    <label for="grupo_id">ID de Grupo (Ej: 5IM9)</label>
                 </div>
 
-                <div class="form-group">
-                    <label for="student-dob">Fecha de Nacimiento</label>
-                    <input type="date" id="student-dob" name="student-dob" required>
-                    <small class="error-message"></small>
+                <div class="user-box">
+                    <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" placeholder=" ">
+                    <label for="fecha_nacimiento">Fecha de Nacimiento (Opcional)</label>
                 </div>
 
-                 <div class="form-group">
-                    <label for="student-gender">Género</label>
-                    <select id="student-gender" name="student-gender" required>
-                        <option value="" disabled selected>Selecciona...</option>
+                <div class="user-box">
+                    <select id="genero" name="genero" required>
+                        <option value="" disabled selected></option>
                         <option value="masculino">Masculino</option>
                         <option value="femenino">Femenino</option>
                         <option value="otro">Otro</option>
-                        <option value="no-especificar">Prefiero no especificar</option>
+                        <option value="no-especificar">No especificar</option>
                     </select>
-                    <small class="error-message"></small>
+                    <label for="genero">Género</label>
                 </div>
 
-                <div class="form-group">
-                    <label for="student-photo-url">URL de la Foto</label>
-                    <input type="url" id="student-photo-url" name="student-photo-url" placeholder="https://ejemplo.com/foto.jpg">
-                    <small class="error-message"></small>
+                <div class="user-box">
+                    <input type="file" id="foto_alumno" name="foto_alumno" accept="image/*" style="padding-top: 14px;">
+                    <label for="foto_alumno" style="top: -20px; font-size: 12px;">Foto (Opcional)</label>
                 </div>
 
-                <button type="submit" class="action-button submit-button">Registrar Alumno</button>
+                <div id="error-message" class="error-text" style="color: var(--accent-red); text-align: center; margin-bottom: 15px;"></div>
+                <div id="success-message" class="success-text" style="color: green; text-align: center; margin-bottom: 15px;"></div>
 
+                <div class="auth-actions">
+                    <button type="submit" class="btn">Registrar Alumno</button>
+                </div>
             </form>
         </div>
     </main>
-
-    <footer class="main-footer">
-        <p>Endware Solutions 2025</p>
-    </footer>
-
-    <script src="../assets/js/theme-changer.js"></script>
-    <script src="../assets/js/input-validator.js"></script>
-    </body>
+    
+    <script src="/assets/js/api.js"></script>
+    <script src="/assets/js/header.js"></script>
+    <script src="/assets/js/alumnos-register.js"></script>
+</body>
 </html>

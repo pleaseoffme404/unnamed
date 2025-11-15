@@ -57,12 +57,20 @@ app.get('/alumnos/register', isAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'alumnos', 'register', 'index.html'));
 });
 
+app.get('/alumnos/mass-register', isAuthenticated, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'alumnos', 'mass-register', 'index.html'));
+});
+
 app.get('/tutores', isAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'tutores', 'index.html'));
 });
 
 app.get('/tutores/register', isAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'tutores', 'register', 'index.html'));
+});
+
+app.get('/usuarios/register', isAuthenticated, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'usuarios', 'register', 'index.html'));
 });
 
 app.listen(PORT, () => {
