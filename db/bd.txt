@@ -94,3 +94,9 @@ CREATE TABLE Vehiculos (
     FOREIGN KEY (alumno_boleta) REFERENCES Alumnos(boleta)
         ON DELETE CASCADE
 );
+INSERT INTO Usuarios (username, password_hash, correo) 
+VALUES (
+    'admin', 
+    '$2b$10$f9a/A8tX5Bm4JlQ2G8ApZ.eBV9aFg1A/3cK.B6alg6pAg2gA/g4gE', 
+    'admin@example.com'
+);

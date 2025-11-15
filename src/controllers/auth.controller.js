@@ -1,117 +1,101 @@
 const pool = require('../services/db.service');
 const bcrypt = require('bcrypt');
 
-const saltRounds = 10; 
+const login = async (req, res) => {
+    const { user, password } = req.body;
 
-exports.register = async (req, res) => {
+    if (!user || !password) {
+        return res.status(400).json({ success: false, message: 'Usuario y contraseña son requeridos.' });
+    }
+
+    try {
+        const [rows] = await pool.query('SELECT * FROM Usuarios WHERE username = ? OR correo = ?', [user, user]);
+
+        if (rows.length === 0) {
+            return res.status(401).json({ success: false, message: 'Credenciales inválidas.' });
+        }
+
+        const adminUser = rows[0];
+
+        const isMatch = await bcrypt.compare(password, adminUser.password_hash);
+
+        if (!isMatch) {
+            return res.status(401).json({ success: false, message: 'Credenciales inválidas.' });
+        }
+
+        req.session.autenticado = true;
+        req.session.user = {
+            id: adminUser.id,
+            username: adminUser.username,
+            correo: adminUser.correo
+        };
+
+        res.status(200).json({
+            success: true,
+            message: 'Inicio de sesión exitoso.',
+            user: req.session.user
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Error interno del servidor.' });
+    }
+};
+
+const register = async (req, res) => {
     const { username, password, correo } = req.body;
 
     if (!username || !password || !correo) {
-        return res.status(400).json({ message: 'Faltan campos obligatorios.' });
+        return res.status(400).json({ success: false, message: 'Todos los campos son requeridos.' });
     }
 
     try {
-        const passwordHash = await bcrypt.hash(password, saltRounds);
+        const salt = await bcrypt.genSalt(10);
+        const password_hash = await bcrypt.hash(password, salt);
 
-        const [result] = await pool.query(
-            'INSERT INTO Usuarios (username, password_hash, correo) VALUES (?, ?, ?)',
-            [username, passwordHash, correo]
+        await pool.query(
+            'INSERT INTO Usuarios (username, correo, password_hash) VALUES (?, ?, ?)',
+            [username, correo, password_hash]
         );
 
-        res.status(201).json({ message: 'Usuario registrado exitosamente.', userId: result.insertId });
+        res.status(201).json({ success: true, message: 'Usuario administrador creado exitosamente.' });
 
     } catch (error) {
-        console.error(error);
         if (error.code === 'ER_DUP_ENTRY') {
-            return res.status(409).json({ message: 'El nombre de usuario o correo ya existen.' });
+            return res.status(409).json({ success: false, message: 'El usuario o el email ya están registrados.' });
         }
-        res.status(500).json({ message: 'Error interno del servidor.' });
-    }
-};
-
-exports.login = async (req, res) => {
-    const { username, password } = req.body;
-
-    if (!username || !password) {
-        return res.status(400).json({ message: 'Usuario y contraseña son requeridos.' });
-    }
-
-    try {
-        const [rows] = await pool.query('SELECT * FROM Usuarios WHERE username = ?', [username]);
-
-        if (rows.length === 0) {
-            return res.status(404).json({ message: 'Usuario no encontrado.' });
-        }
-
-        const user = rows[0];
-
-        const match = await bcrypt.compare(password, user.password_hash);
-
-        if (!match) {
-            return res.status(401).json({ message: 'Contraseña incorrecta.' });
-        }
-
-        req.session.user = {
-            id: user.id,
-            username: user.username
-        };
-
-        res.status(200).json({ message: 'Login exitoso.', user: req.session.user });
-
-    } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Error interno del servidor.' });
+        res.status(500).json({ success: false, message: 'Error interno del servidor.' });
     }
 };
 
-exports.reauthenticate = async (req, res) => {
-    if (!req.session.user) {
-        return res.status(401).json({ message: 'No hay sesión activa.' });
-    }
-    
-    const { password } = req.body;
-    const { username } = req.session.user;
-
-    if (!password) {
-        return res.status(400).json({ message: 'Contraseña requerida.' });
-    }
-
-    try {
-        const [rows] = await pool.query('SELECT password_hash FROM Usuarios WHERE username = ?', [username]);
-        if (rows.length === 0) {
-            return res.status(404).json({ message: 'Usuario no encontrado.' });
-        }
-
-        const user = rows[0];
-        const match = await bcrypt.compare(password, user.password_hash);
-
-        if (!match) {
-            return res.status(401).json({ message: 'Contraseña incorrecta.' });
-        }
-
-        res.status(200).json({ message: 'Verificación exitosa.' });
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Error interno del servidor.' });
-    }
-};
-
-
-exports.status = (req, res) => {
-    if (req.session.user) {
-        res.status(200).json({ loggedIn: true, user: req.session.user });
-    } else {
-        res.status(401).json({ loggedIn: false });
-    }
-};
-
-exports.logout = (req, res) => {
+const logout = (req, res) => {
     req.session.destroy((err) => {
         if (err) {
-            return res.status(500).json({ message: 'No se pudo cerrar sesión.' });
+            return res.status(500).json({ success: false, message: 'No se pudo cerrar la sesión.' });
         }
-        res.clearCookie('connect.sid'); 
-        res.status(200).json({ message: 'Sesión cerrada exitosamente.' });
+        res.status(200).json({ success: true, message: 'Sesión cerrada exitosamente.' });
     });
+};
+
+const checkAuth = (req, res) => {
+    if (req.session.autenticado && req.session.user) {
+        res.status(200).json({
+            success: true,
+            autenticado: true,
+            user: req.session.user
+        });
+    } else {
+        res.status(200).json({
+            success: true,
+            autenticado: false
+        });
+    }
+};
+
+module.exports = {
+    login,
+    register,
+    logout,
+    checkAuth
 };

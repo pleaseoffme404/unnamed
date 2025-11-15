@@ -1,0 +1,168 @@
+:root {
+    --accent-primary: #03e9f4;
+    --accent-secondary: #03c4cf;
+    --accent-red: #e74c3c;
+    
+    --bg-primary: #f4f7f6;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #eeeeee;
+
+    --text-primary: #111111;
+    --text-secondary: #555555;
+    --text-on-accent: #000000;
+
+    --border-color: #dddddd;
+    --shadow-light: 0 4px 12px rgba(0, 0, 0, 0.05);
+    --shadow-heavy: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.dark-theme {
+    --accent-primary: #03e9f4;
+    --accent-secondary: #24fff7;
+    --accent-red: #ff6b5a;
+
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #2a2a2a;
+    --bg-tertiary: #3a3a3a;
+    
+    --text-primary: #ffffff;
+    --text-secondary: #aaaaaa;
+    --text-on-accent: #000000;
+
+    --border-color: #444444;
+    --shadow-light: 0 4px 12px rgba(0, 0, 0, 0.2);
+    --shadow-heavy: 0 15px 25px rgba(0, 0, 0, 0.4);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    height: 100%;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    transition: background-color 0.3s, color 0.3s;
+    line-height: 1.6;
+}
+
+main {
+    padding: 20px;
+}
+
+.auth-page-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 70px);
+    padding: 20px;
+}
+
+.auth-container {
+    width: 100%;
+    max-width: 400px;
+    padding: 40px;
+    background: var(--bg-secondary);
+    box-sizing: border-box;
+    box-shadow: var(--shadow-heavy);
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+}
+
+.auth-container h2 {
+    margin: 0 0 30px;
+    padding: 0;
+    color: var(--text-primary);
+    text-align: center;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.user-box {
+    position: relative;
+}
+
+.user-box input {
+    width: 100%;
+    padding: 10px 0;
+    font-size: 16px;
+    color: var(--text-primary);
+    margin-bottom: 30px;
+    border: none;
+    border-bottom: 1px solid var(--border-color);
+    outline: none;
+    background: transparent;
+    transition: border-color 0.3s;
+}
+
+.user-box label {
+    position: absolute;
+    top: 10px;
+    left: 0;
+    font-size: 16px;
+    color: var(--text-secondary);
+    pointer-events: none;
+    transition: 0.3s ease all;
+}
+
+.user-box input:focus {
+    border-bottom-color: var(--accent-primary);
+}
+
+.user-box input:focus ~ label,
+.user-box input:valid ~ label,
+.user-box input:not(:placeholder-shown) ~ label {
+    top: -20px;
+    left: 0;
+    color: var(--accent-primary);
+    font-size: 12px;
+}
+
+.auth-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.btn {
+    display: inline-block;
+    width: 100%;
+    padding: 12px 20px;
+    color: var(--text-on-accent);
+    background-color: var(--accent-primary);
+    font-size: 16px;
+    text-align: center;
+    text-decoration: none;
+    text-transform: uppercase;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s, box-shadow 0.3s;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.btn:hover {
+    background-color: var(--accent-secondary);
+    box-shadow: 0 4px 15px rgba(3, 233, 244, 0.3);
+}
+
+.auth-link {
+    font-size: 14px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    margin-top: 20px;
+    transition: color 0.3s;
+}
+
+.auth-link:hover {
+    color: var(--accent-primary);
+    text-decoration: none;
+}
