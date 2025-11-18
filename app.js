@@ -11,13 +11,14 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+    
 
 app.use(session({
     secret: process.env.SESSION_SECRET || 'ZdpaCVH26y4u44V0q0CSWibcGpW4Y7xZ',
     resave: false,
     saveUninitialized: true,
     cookie: {
-        secure: process.env.NODE_ENV === 'production',
+    secure: process.env.NODE_ENV === 'production',
         maxAge: 1000 * 60 * 60 * 24
     }
 }));
