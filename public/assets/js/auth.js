@@ -1,70 +1,49 @@
 document.addEventListener('DOMContentLoaded', () => {
+    
     const loginForm = document.getElementById('login-form');
-    const forgotForm = document.getElementById('forgot-form');
+    const loginFeedback = document.getElementById('login-feedback');
 
     if (loginForm) {
-        loginForm.addEventListener('submit', handleLogin);
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const correo = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const data = { correo: correo, password: password };
+                const response = await api.post('/auth/login', data);
+                
+                if (response.success) {
+                    window.location.href = '/dashboard/index.html';
+                }
+            } catch (error) {
+                showFeedback(loginFeedback, error.message || 'Error al iniciar sesión.', 'error');
+            }
+        });
     }
+
+    const forgotForm = document.getElementById('forgot-password-form');
+    const forgotFeedback = document.getElementById('forgot-feedback');
 
     if (forgotForm) {
-        forgotForm.addEventListener('submit', handleForgotPassword);
+        forgotForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const correo = document.getElementById('email-forgot').value;
+            
+            try {
+                const response = await api.post('/auth/forgot-password', { correo_electronico: correo });
+                showFeedback(forgotFeedback, response.message, 'success');
+            } catch (error) {
+                showFeedback(forgotFeedback, error.message || 'Error al enviar el correo.', 'error');
+            }
+        });
+    }
+    
+    function showFeedback(element, message, type) {
+        if (!element) return;
+        element.textContent = message;
+        element.className = `feedback-message ${type}`;
+        element.style.display = 'block';
     }
 });
-
-async function handleLogin(e) {
-    e.preventDefault();
-    const errorMessage = document.getElementById('error-message');
-    errorMessage.textContent = '';
-
-    const userField = document.getElementById('user');
-    const passwordField = document.getElementById('password');
-
-    const user = userField.value;
-    const password = passwordField.value;
-
-    if (!user || !password) {
-        errorMessage.textContent = 'Por favor, ingresa usuario y contraseña.';
-        return;
-    }
-
-    try {
-        const data = await apiFetch('/api/login', 'POST', { user, password });
-
-        if (data.success) {
-            window.location.href = '/dashboard';
-        } else {
-            errorMessage.textContent = data.message || 'Error desconocido.';
-        }
-    } catch (error) {
-        errorMessage.textContent = error.message || 'Credenciales inválidas o error de red.';
-    }
-}
-
-async function handleForgotPassword(e) {
-    e.preventDefault();
-    const errorMessage = document.getElementById('error-message');
-    const successMessage = document.getElementById('success-message');
-    errorMessage.textContent = '';
-    successMessage.textContent = '';
-
-    const emailField = document.getElementById('email');
-    const email = emailField.value;
-
-    if (!email) {
-        errorMessage.textContent = 'Por favor, ingresa un correo electrónico.';
-        return;
-    }
-
-    try {
-        const data = await apiFetch('/api/forgot-password', 'POST', { email });
-
-        if (data.success) {
-            successMessage.textContent = data.message || 'Si el correo existe, se enviará un enlace.';
-            emailField.value = '';
-        } else {
-            errorMessage.textContent = data.message || 'No se pudo procesar la solicitud.';
-        }
-    } catch (error) {
-        errorMessage.textContent = error.message || 'Error al contactar al servidor.';
-    }
-}

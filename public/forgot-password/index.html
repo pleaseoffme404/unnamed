@@ -3,36 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recuperar Contraseña - Unnamed</title>
-    <link rel="stylesheet" href="/assets/css/style.css">
-    <link rel="stylesheet" href="/assets/css/header.css">
+    <title>Recuperar Contraseña</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
 </head>
-<body>
+<body class="login-body">
 
-    <header class="main-header"></header>
+    <div class="theme-switch-wrapper">
+        <svg id="switcher" class="switcher" aria-hidden="true" width="24" height="24" viewBox="0 0 24 24">
+            <circle class="switcher__sun" cx="12" cy="12" r="6" mask="url(#moon-mask)" fill="currentColor" />
+            <g class="switcher__sun-beams" stroke="currentColor">
+                <line x1="12" y1="1" x2="12" y2="3" />
+                <line x1="12" y1="21" x2="12" y2="23" />
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                <line x1="1" y1="12" x2="3" y2="12" />
+                <line x1="21" y1="12" x2="23" y2="12" />
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+            </g>
+            <mask id="moon-mask">
+                <rect x="0" y="0" width="100%" height="100%" fill="white" />
+                <circle class="switcher__moon" cx="24" cy="10" r="6" fill="black" />
+            </mask>
+        </svg>
+    </div>
 
-    <main class="auth-page-wrapper">
-        <div class="auth-container">
-            <h2>Recuperar Contraseña</h2>
-            <form id="forgot-form" novalidate>
-                <div class="user-box">
-                    <input type="email" id="email" name="email" required placeholder=" ">
-                    <label for="email">Correo Electrónico</label>
-                </div>
+    <main class="login-container">
+        <h1>Recuperar Contraseña</h1>
+        <p>Ingresa tu correo y te enviaremos un enlace de recuperación.</p>
+        
+        <div id="forgot-feedback" class="feedback-message" style="display: none;"></div>
 
-                <div id="error-message" class="error-text"></div>
-                <div id="success-message" class="success-text"></div>
-
-                <div class="auth-actions">
-                    <button type="submit" class="btn">Enviar enlace</button>
-                    <a href="/" class="auth-link">Volver a Inicio de Sesión</a>
-                </div>
-            </form>
-        </div>
+        <form id="forgot-password-form" class="form-container">
+            <div class="form-group">
+                <label for="email-forgot">Correo Electrónico:</label>
+                <input type="email" id="email-forgot" name="email" required autocomplete="email">
+            </div>
+            <button type="submit" class="btn btn-primary">Enviar Correo</button>
+        </form>
+        <a href="/index.html" class="forgot-password-link">Volver a Login</a>
     </main>
     
-    <script src="/assets/js/api.js"></script>
-    <script src="/assets/js/header.js"></script>
-    <script src="/assets/js/auth.js"></script>
+    <script src="../assets/js/api.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/theme-changer.js"></script>
 </body>
 </html>

@@ -1,102 +1,107 @@
-CREATE DATABASE IF NOT EXISTS unnamed;
-use unnamed;
-CREATE TABLE Usuarios (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(50) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
-    correo VARCHAR(100) NOT NULL UNIQUE
+CREATE DATABASE  IF NOT EXISTS `asistencia_escolar`;
+USE `asistencia_escolar`;
+
+CREATE TABLE IF NOT EXISTS `usuarios` (
+    `id_usuario` INT AUTO_INCREMENT PRIMARY KEY,
+    `correo_electronico` VARCHAR(255) NOT NULL UNIQUE,
+    `contrasena_hash` VARCHAR(255) NOT NULL,
+    `telefono` VARCHAR(20) UNIQUE,
+    `rol` ENUM('admin', 'alumno', 'tutor') NOT NULL,
+    `esta_activo` BOOLEAN DEFAULT true,
+    `fecha_creacion` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE Grupos (
-    id VARCHAR(10) PRIMARY KEY, 
-    grado VARCHAR(10) NOT NULL, 
-    maestro_tutor VARCHAR(100),
-    horario_entrada TIME NOT NULL,
-    horario_salida TIME NOT NULL,
-    tolerancia_minutos INT DEFAULT 10
+CREATE TABLE IF NOT EXISTS `perfil_admin` (
+    `id_perfil_admin` INT AUTO_INCREMENT PRIMARY KEY,
+    `id_usuario_fk` INT NOT NULL UNIQUE,
+    `nombre_completo` VARCHAR(255) NOT NULL,
+    `imagen_url` VARCHAR(255) NULL,
+    FOREIGN KEY (`id_usuario_fk`) REFERENCES `usuarios`(`id_usuario`) ON DELETE CASCADE
 );
 
-CREATE TABLE Alumnos (
-    boleta VARCHAR(20) PRIMARY KEY,
-    nombre_completo VARCHAR(150) NOT NULL,
-    fecha_nacimiento DATE,
-    genero ENUM('masculino', 'femenino', 'otro', 'no-especificar'),
-    foto_url VARCHAR(255) NULL,
-    grupo_id VARCHAR(10) NOT NULL,
-    
-    FOREIGN KEY (grupo_id) REFERENCES Grupos(id)
-        ON UPDATE CASCADE
-        ON DELETE RESTRICT,
-        
-    INDEX idx_alumno_nombre (nombre_completo)
+CREATE TABLE IF NOT EXISTS `perfil_alumno` (
+    `id_perfil_alumno` INT AUTO_INCREMENT PRIMARY KEY,
+    `id_usuario_fk` INT NOT NULL UNIQUE,
+    `nombres` VARCHAR(150) NOT NULL,
+    `apellido_paterno` VARCHAR(100) NOT NULL,
+    `apellido_materno` VARCHAR(100),
+    `fecha_nacimiento` DATE,
+    `curp` VARCHAR(18) NOT NULL UNIQUE,
+    `nss` VARCHAR(20) UNIQUE,
+    `tipo_sangre` VARCHAR(5),
+    `grado` VARCHAR(20),
+    `grupo` VARCHAR(10),
+    `imagen_url` VARCHAR(255) NULL,
+    `qr_token` VARCHAR(255) UNIQUE,
+    FOREIGN KEY (`id_usuario_fk`) REFERENCES `usuarios`(`id_usuario`) ON DELETE CASCADE
 );
 
-CREATE TABLE Tutores (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nombre_completo VARCHAR(150) NOT NULL,
-    genero ENUM('masculino', 'femenino', 'otro', 'no-especificar'),
-    movil VARCHAR(15) NOT NULL,
-    correo VARCHAR(100) NOT NULL UNIQUE,
-    metodo_notificacion ENUM('movil', 'correo', 'ambos', 'ninguno') NOT NULL,
-    foto_url VARCHAR(255) NULL,
-    
-    INDEX idx_tutor_nombre (nombre_completo)
+CREATE TABLE IF NOT EXISTS `perfil_tutor` (
+    `id_perfil_tutor` INT AUTO_INCREMENT PRIMARY KEY,
+    `id_usuario_fk` INT NOT NULL UNIQUE,
+    `nombres` VARCHAR(150) NOT NULL,
+    `apellido_paterno` VARCHAR(100) NOT NULL,
+    `apellido_materno` VARCHAR(100),
+    `imagen_url` VARCHAR(255) NULL,
+    `notificaciones` ENUM('ninguna', 'correo', 'ambas') DEFAULT 'correo',
+    FOREIGN KEY (`id_usuario_fk`) REFERENCES `usuarios`(`id_usuario`) ON DELETE CASCADE
 );
 
-CREATE TABLE Alumno_Tutor (
-    alumno_boleta VARCHAR(20) NOT NULL,
-    tutor_id INT NOT NULL,
-    
-    PRIMARY KEY (alumno_boleta, tutor_id),
-    
-    FOREIGN KEY (alumno_boleta) REFERENCES Alumnos(boleta)
-        ON DELETE CASCADE,
-    FOREIGN KEY (tutor_id) REFERENCES Tutores(id)
-        ON DELETE CASCADE,
-        
-    -- Índice para buscar rápido los alumnos de un tutor
-    INDEX idx_tutor_alumnos (tutor_id)
+CREATE TABLE IF NOT EXISTS `vehiculos` (
+    `id_vehiculo` INT AUTO_INCREMENT PRIMARY KEY,
+    `id_perfil_alumno_fk` INT NOT NULL,
+    `tipo` VARCHAR(100) NOT NULL,
+    `descripcion` VARCHAR(255),
+    `imagen_url` VARCHAR(255) NULL,
+    `fecha_registro` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`id_perfil_alumno_fk`) REFERENCES `perfil_alumno`(`id_perfil_alumno`) ON DELETE CASCADE
 );
 
-CREATE TABLE Historial_Registros (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    alumno_boleta VARCHAR(20) NOT NULL,
-    timestamp_registro DATETIME NOT NULL,
-    tipo_registro ENUM('Entrada', 'Salida') NOT NULL,
-    
-    fecha_registro DATE AS (DATE(timestamp_registro)) STORED, 
-    
-    FOREIGN KEY (alumno_boleta) REFERENCES Alumnos(boleta)
-        ON DELETE CASCADE,
-        
-    INDEX idx_reporte_fecha_alumno (fecha_registro, alumno_boleta),
-    INDEX idx_historial_alumno (alumno_boleta)
+CREATE TABLE IF NOT EXISTS `alumnos_tutores` (
+    `id_relacion` INT AUTO_INCREMENT PRIMARY KEY,
+    `id_perfil_alumno_fk` INT NOT NULL,
+    `id_perfil_tutor_fk` INT NOT NULL,
+    `parentesco` VARCHAR(100) NOT NULL,
+    FOREIGN KEY (`id_perfil_alumno_fk`) REFERENCES `perfil_alumno`(`id_perfil_alumno`) ON DELETE CASCADE,
+    FOREIGN KEY (`id_perfil_tutor_fk`) REFERENCES `perfil_tutor`(`id_perfil_tutor`) ON DELETE CASCADE,
+    UNIQUE KEY `idx_alumno_tutor` (`id_perfil_alumno_fk`, `id_perfil_tutor_fk`)
 );
 
-CREATE TABLE Alertas (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    mensaje TEXT NOT NULL,
-    prioridad ENUM('baja', 'moderada', 'urgente') NOT NULL,
-    es_visible BOOLEAN DEFAULT TRUE,
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    fecha_modificacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
-    INDEX idx_alertas_visibles_recientes (es_visible, fecha_creacion DESC)
+CREATE TABLE IF NOT EXISTS `asistencia` (
+    `id_asistencia` INT AUTO_INCREMENT PRIMARY KEY,
+    `id_perfil_alumno_fk` INT NOT NULL,
+    `fecha_hora_entrada` TIMESTAMP NOT NULL,
+    `fecha_hora_salida` TIMESTAMP NULL,
+    `metodo_entrada` ENUM('qr', 'manual') DEFAULT 'qr',
+    FOREIGN KEY (`id_perfil_alumno_fk`) REFERENCES `perfil_alumno`(`id_perfil_alumno`) ON DELETE CASCADE
 );
 
-CREATE TABLE Vehiculos (
-    alumno_boleta VARCHAR(20) PRIMARY KEY, 
-    tipo VARCHAR(50) NOT NULL, 
-    color VARCHAR(30),
-    marca VARCHAR(50),
-    foto_url VARCHAR(255) NULL,
-    
-    FOREIGN KEY (alumno_boleta) REFERENCES Alumnos(boleta)
-        ON DELETE CASCADE
+CREATE TABLE IF NOT EXISTS `anuncios` (
+    `id_anuncio` INT AUTO_INCREMENT PRIMARY KEY,
+    `id_admin_fk` INT NOT NULL,
+    `titulo` VARCHAR(255) NOT NULL,
+    `contenido` TEXT NOT NULL,
+    `destinatarios` ENUM('todos', 'solo_tutores', 'por_grado') DEFAULT 'todos',
+    `fecha_publicacion` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`id_admin_fk`) REFERENCES `perfil_admin`(`id_perfil_admin`)
 );
-INSERT INTO Usuarios (username, password_hash, correo) 
+
+CREATE TABLE IF NOT EXISTS `password_reset_tokens` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `id_usuario_fk` INT NOT NULL,
+    `token` VARCHAR(255) NOT NULL UNIQUE,
+    `expira_en` TIMESTAMP NOT NULL,
+    FOREIGN KEY (`id_usuario_fk`) REFERENCES `usuarios`(`id_usuario`) ON DELETE CASCADE
+);
+INSERT INTO usuarios (correo_electronico, contrasena_hash, rol) 
 VALUES (
-    'admin', 
-    '$2b$10$f9a/A8tX5Bm4JlQ2G8ApZ.eBV9aFg1A/3cK.B6alg6pAg2gA/g4gE', 
-    'admin@example.com'
+    'admin@bullnodes.com',
+    '$2a$10$dvrvjqcbGuSCuB0BBR7CPu37d8dUXo557xACc8w4WsGZ2VA07QMYy',
+    'admin'
+);
+
+INSERT INTO perfil_admin (id_usuario_fk, nombre_completo) 
+VALUES (
+    (SELECT id_usuario FROM usuarios WHERE correo_electronico = 'admin@bullnodes.com'),
+    'Administrador Principal'
 );

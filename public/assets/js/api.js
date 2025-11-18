@@ -1,31 +1,57 @@
-async function apiFetch(url, method = 'GET', body = null) {
-    const options = {
-        method: method,
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    };
+const api = {
+    baseUrl: '/api',
 
-    if (body) {
-        options.body = JSON.stringify(body);
-    }
+    async _fetch(url, options = {}) {
+        options.credentials = 'include';
 
-    try {
-        const response = await fetch(url, options);
+        if (options.body && !(options.body instanceof FormData)) {
+            options.headers = {
+                'Content-Type': 'application/json',
+                ...options.headers,
+            };
+            options.body = JSON.stringify(options.body);
+        }
         
-        if (response.status === 204) {
-            return { success: true, data: null };
+        try {
+            const response = await fetch(this.baseUrl + url, options);
+            
+            if (response.status === 401) {
+                console.error('No autorizado. Redirigiendo al login.');
+                window.location.href = '/index.html'; 
+                return Promise.reject(new Error('No autorizado'));
+            }
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                return Promise.reject(data);
+            }
+            
+            return data;
+
+        } catch (error) {
+            console.error('Error de red o fetch:', error);
+            return Promise.reject({ success: false, message: 'Error de red. ¿El servidor está caído?' });
         }
+    },
 
-        const data = await response.json();
+    get(url) {
+        return this._fetch(url, { method: 'GET' });
+    },
 
-        if (!response.ok) {
-            throw new Error(data.message || `Error ${response.status}`);
-        }
+    post(url, data) {
+        return this._fetch(url, { method: 'POST', body: data });
+    },
+    
+    postForm(url, formData) {
+        return this._fetch(url, { method: 'POST', body: formData });
+    },
 
-        return data;
-    } catch (error) {
-        console.error(`Error en apiFetch (${url}):`, error.message);
-        throw error; 
+    putForm(url, formData) {
+        return this._fetch(url, { method: 'PUT', body: formData });
+    },
+
+    delete(url) {
+        return this._fetch(url, { method: 'DELETE' });
     }
-}
+};

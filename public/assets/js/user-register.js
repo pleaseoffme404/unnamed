@@ -1,37 +1,29 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const registerForm = document.getElementById('register-form');
+    const registerForm = document.getElementById('form-registrar-alumno');
+    const formFeedback = document.getElementById('form-feedback');
+
     if (registerForm) {
-        registerForm.addEventListener('submit', handleRegister);
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(registerForm);
+            
+            try {
+                const response = await api.postForm('/alumnos', formData);
+                
+                showFeedback(formFeedback, '¡Alumno registrado exitosamente!', 'success');
+                registerForm.reset();
+                
+            } catch (error) {
+                showFeedback(formFeedback, error.message || 'Error al registrar. Revisa los campos.', 'error');
+            }
+        });
+    }
+
+    function showFeedback(element, message, type) {
+        if (!element) return;
+        element.textContent = message;
+        element.className = `feedback-message ${type}`;
+        element.style.display = 'block';
     }
 });
-
-async function handleRegister(e) {
-    e.preventDefault();
-    const errorMessage = document.getElementById('error-message');
-    const successMessage = document.getElementById('success-message');
-    errorMessage.textContent = '';
-    successMessage.textContent = '';
-
-    const form = e.target;
-    const username = form.username.value;
-    const correo = form.correo.value;
-    const password = form.password.value;
-
-    if (!username || !correo || !password) {
-        errorMessage.textContent = 'Todos los campos son obligatorios.';
-        return;
-    }
-
-    try {
-        const data = await apiFetch('/api/register', 'POST', { username, correo, password });
-
-        if (data.success) {
-            successMessage.textContent = '¡Usuario registrado exitosamente!';
-            form.reset();
-        } else {
-            errorMessage.textContent = data.message || 'Error desconocido.';
-        }
-    } catch (error) {
-        errorMessage.textContent = error.message || 'Error al registrar el usuario.';
-    }
-}
