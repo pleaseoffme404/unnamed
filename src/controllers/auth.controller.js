@@ -29,7 +29,7 @@ const login = async (req, res) => {
         const user = rows[0];
 
         if (user.rol !== 'admin') {
-            return res.status(403).json({ success: false, message: 'Acceso denegado. Esta plataforma es solo para administradores.' });
+            return res.status(403).json({ success: false, message: 'Acceso denegado. Solo administradores.' });
         }
 
         const isMatch = await bcrypt.compare(password, user.contrasena_hash);
@@ -38,34 +38,68 @@ const login = async (req, res) => {
             return res.status(401).json({ success: false, message: 'Credenciales inválidas.' });
         }
 
-        req.session.autenticado = true;
         req.session.user = {
             id: user.id_usuario,
-            correo: user.correo_electronico,
+            email: user.correo_electronico,
             rol: user.rol,
             nombre: user.nombre_completo,
             imagen: user.imagen_url
         };
 
-        res.status(200).json({
-            success: true,
-            message: 'Inicio de sesión exitoso.',
-            user: req.session.user
+        req.session.save(err => {
+            if (err) {
+                console.error('Error guardando sesión:', err);
+                return res.status(500).json({ success: false, message: 'Error al iniciar sesión.' });
+            }
+            res.status(200).json({ 
+                success: true, 
+                message: 'Inicio de sesión exitoso.',
+                user: req.session.user 
+            });
         });
 
     } catch (error) {
+        console.error(error);
         res.status(500).json({ success: false, message: 'Error interno del servidor.' });
     } finally {
         if (connection) connection.release();
     }
 };
 
+const verificar = (req, res) => {
+    if (req.session.user) {
+        return res.json({
+            success: true,
+            autenticado: true,
+            tipo: req.session.user.rol,
+            usuario: req.session.user
+        });
+    } else {
+        return res.json({
+            success: true,
+            autenticado: false
+        });
+    }
+};
+
+// --- Logout ---
+const logout = (req, res) => {
+    req.session.destroy((err) => {
+        if (err) {
+            return res.status(500).json({ success: false, message: 'Error al cerrar sesión.' });
+        }
+        res.clearCookie('sid_escolar'); 
+        res.json({ success: true, message: 'Sesión cerrada.' });
+    });
+};
+
+
 const registerAdmin = async (req, res) => {
     const { nombre_completo, correo_electronico, telefono, contrasena } = req.body;
     let imageUrl = null;
 
     if (!nombre_completo || !correo_electronico || !contrasena) {
-        return res.status(400).json({ success: false, message: 'Nombre, correo y contraseña son requeridos.' });
+        return res.status(400).json({ success: false, message: 'Faltan datos requeridos.' });
     }
 
     let connection;
@@ -100,47 +134,9 @@ const registerAdmin = async (req, res) => {
         if (imageUrl) await deleteImage(imageUrl); 
 
         if (error.code === 'ER_DUP_ENTRY') {
-            return res.status(409).json({ success: false, message: 'El correo electrónico o teléfono ya están registrados.' });
+            return res.status(409).json({ success: false, message: 'El correo o teléfono ya existen.' });
         }
-        res.status(500).json({ success: false, message: 'Error interno del servidor.' });
-    } finally {
-        if (connection) connection.release();
-    }
-};
-
-const logout = (req, res) => {
-    req.session.destroy((err) => {
-        if (err) {
-            return res.status(500).json({ success: false, message: 'No se pudo cerrar la sesión.' });
-        }
-        res.clearCookie('connect.sid');
-        res.status(200).json({ success: true, message: 'Sesión cerrada exitosamente.' });
-    });
-};
-
-const checkAuth = async (req, res) => {
-    let connection;
-    try {
-        connection = await pool.getConnection();
-        const [rows] = await connection.query(
-            `SELECT p.nombre_completo, p.imagen_url 
-            FROM perfil_admin p 
-            WHERE p.id_usuario_fk = ?`,
-            [req.session.user.id]
-        );
-
-        if (rows.length > 0) {
-            req.session.user.nombre = rows[0].nombre_completo;
-            req.session.user.imagen = rows[0].imagen_url;
-        }
-
-        res.status(200).json({
-            success: true,
-            autenticado: true,
-            user: req.session.user
-        });
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'Error interno del servidor.' });
+        res.status(500).json({ success: false, message: 'Error interno.' });
     } finally {
         if (connection) connection.release();
     }
@@ -155,14 +151,13 @@ const forgotPassword = async (req, res) => {
         const [users] = await connection.query('SELECT id_usuario FROM usuarios WHERE correo_electronico = ?', [correo_electronico]);
 
         if (users.length === 0) {
-            return res.status(200).json({ success: true, message: 'Si existe una cuenta, se enviará un correo de recuperación.' });
+            return res.status(200).json({ success: true, message: 'Si existe una cuenta, se enviará un correo.' });
         }
 
         const user = users[0];
         const token = crypto.randomBytes(32).toString('hex');
         const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-        
-        const expira = new Date(Date.now() + 3600000);
+        const expira = new Date(Date.now() + 3600000); 
 
         await connection.query('DELETE FROM password_reset_tokens WHERE id_usuario_fk = ?', [user.id_usuario]);
         await connection.query(
@@ -170,15 +165,16 @@ const forgotPassword = async (req, res) => {
             [user.id_usuario, tokenHash, expira]
         );
 
-        const resetLink = `http://localhost:5173/reset-password?token=${token}`;
-        const emailHtml = `<p>Para restablecer tu contraseña, haz clic en el siguiente enlace:</p><a href="${resetLink}">${resetLink}</a>`;
+        const resetLink = `http://localhost:1000/reset-password?token=${token}`;
+        const emailHtml = `<p>Para restablecer tu contraseña, haz clic aquí:</p><a href="${resetLink}">${resetLink}</a>`;
 
-        await sendEmail(correo_electronico, 'Restablecimiento de Contraseña', emailHtml);
+        await sendEmail(correo_electronico, 'Recuperar Contraseña', emailHtml);
 
-        res.status(200).json({ success: true, message: 'Si existe una cuenta, se enviará un correo de recuperación.' });
+        res.status(200).json({ success: true, message: 'Si existe una cuenta, se enviará un correo.' });
 
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Error interno del servidor.' });
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Error interno.' });
     } finally {
         if (connection) connection.release();
     }
@@ -188,11 +184,10 @@ const resetPassword = async (req, res) => {
     const { token, nuevaContrasena } = req.body;
 
     if (!token || !nuevaContrasena) {
-        return res.status(400).json({ success: false, message: 'Token y nueva contraseña son requeridos.' });
+        return res.status(400).json({ success: false, message: 'Token y contraseña requeridos.' });
     }
 
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-
     let connection;
     try {
         connection = await pool.getConnection();
@@ -220,22 +215,21 @@ const resetPassword = async (req, res) => {
         await connection.query('DELETE FROM password_reset_tokens WHERE id = ?', [tokenData.id]);
 
         await connection.commit();
-        res.status(200).json({ success: true, message: 'Contraseña actualizada exitosamente.' });
+        res.status(200).json({ success: true, message: 'Contraseña actualizada.' });
 
     } catch (error) {
         if (connection) await connection.rollback();
-        res.status(500).json({ success: false, message: 'Error interno del servidor.' });
+        res.status(500).json({ success: false, message: 'Error interno.' });
     } finally {
         if (connection) connection.release();
     }
 };
 
-
 module.exports = {
     login,
-    registerAdmin,
+    verificar,
     logout,
-    checkAuth,
+    registerAdmin,
     forgotPassword,
     resetPassword
 };

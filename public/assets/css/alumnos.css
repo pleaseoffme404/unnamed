@@ -1,0 +1,110 @@
+.search-grid {
+    display: grid;
+    grid-template-columns: 3fr 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 30px;
+    align-items: start;
+}
+
+.search-box, .filter-box, .action-box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.search-box label, .filter-box label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+
+.view-section.hidden {
+    display: none;
+}
+
+.detail-card {
+    background-color: var(--bg-panel);
+    border-radius: 8px;
+    padding: 30px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.form-grid-layout {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 40px;
+}
+
+.form-col-photo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.photo-preview {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background-color: var(--bg-input);
+    background-size: cover;
+    background-position: center;
+    border: 4px solid var(--bg-app);
+    box-shadow: var(--shadow-sm);
+}
+
+.form-col-data {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.row-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+}
+
+.form-actions-footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+@media (max-width: 850px) {
+    .search-grid {
+        grid-template-columns: 1fr;
+    }
+    .form-grid-layout {
+        grid-template-columns: 1fr;
+    }
+    .form-col-photo {
+        margin-bottom: 20px;
+    }
+}

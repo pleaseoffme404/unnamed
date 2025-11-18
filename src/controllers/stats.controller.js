@@ -1,18 +1,35 @@
 const pool = require('../services/db.service');
 
 const getCounts = async (req, res) => {
+    let connection;
     try {
-        const [alumnosResult] = await pool.query('SELECT COUNT(*) as total FROM Alumnos');
-        const [tutoresResult] = await pool.query('SELECT COUNT(*) as total FROM Tutores');
-        const [anunciosResult] = await pool.query('SELECT COUNT(*) as total FROM Alerta');
+        connection = await pool.getConnection();
 
-        res.json({
-            alumnos: alumnosResult[0].total,
-            tutores: tutoresResult[0].total,
-            anuncios: anunciosResult[0].total
+        const [alumnos] = await connection.query('SELECT COUNT(*) as count FROM perfil_alumno');
+        const [tutores] = await connection.query('SELECT COUNT(*) as count FROM perfil_tutor');
+        const [admins] = await connection.query('SELECT COUNT(*) as count FROM usuarios WHERE rol = "admin"');
+        const [anuncios] = await connection.query('SELECT COUNT(*) as count FROM anuncios');
+        
+        const [asistenciasHoy] = await connection.query(
+            'SELECT COUNT(*) as count FROM asistencia WHERE DATE(fecha_hora_entrada) = CURDATE()'
+        );
+
+        res.status(200).json({
+            success: true,
+            data: {
+                alumnos: alumnos[0].count,
+                tutores: tutores[0].count,
+                admins: admins[0].count,
+                anuncios: anuncios[0].count,
+                asistencias: asistenciasHoy[0].count
+            }
         });
+
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error('Error en stats:', error);
+        res.status(500).json({ success: false, message: 'Error al obtener estadísticas' });
+    } finally {
+        if (connection) connection.release();
     }
 };
 

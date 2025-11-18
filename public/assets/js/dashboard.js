@@ -10,54 +10,37 @@ function setupNavigation() {
     const btnCrearAnuncio = document.getElementById('btn-crear-anuncio');
 
     if (btnScanQr) {
-        btnScanQr.addEventListener('click', () => {
-            window.location.href = '/scarQR';
-        });
+        btnScanQr.addEventListener('click', () => window.location.href = '/scanQR/index.html');
     }
-
     if (btnRegisAlumno) {
-        btnRegisAlumno.addEventListener('click', () => {
-            window.location.href = '/alumnos/registrar';
-        });
+        btnRegisAlumno.addEventListener('click', () => window.location.href = '/alumnos/register/index.html');
     }
-
     if (btnRegisTutor) {
-        btnRegisTutor.addEventListener('click', () => {
-            window.location.href = '/tutores/registrar';
-        });
+        btnRegisTutor.addEventListener('click', () => window.location.href = '/tutores/register/index.html');
     }
-
     if (btnCrearAnuncio) {
-        btnCrearAnuncio.addEventListener('click', () => {
-            window.location.href = '/anouncements';
-        });
+        btnCrearAnuncio.addEventListener('click', () => window.location.href = '/announcements/index.html');
     }
 }
 
 async function loadDashboardData() {
     try {
-        const response = await fetch('/api/stats/counts');
+        const response = await apiFetch('/api/stats/counts', 'GET');
         
-        if (!response.ok) {
-            if (response.status === 401) {
-                window.location.href = '/';
-                return;
-            }
-            throw new Error('Error al cargar los datos');
+        if (response.success) {
+            const data = response.data;
+
+            const cardTutores = document.querySelector('#card-tutores .stat-number');
+            const cardAnuncios = document.querySelector('#card-anuncios .stat-number');
+
+            if (cardTutores) cardTutores.textContent = data.tutores || 0;
+            if (cardAnuncios) cardAnuncios.textContent = data.anuncios || 0; 
+            
+            renderAlumnosChart(data.alumnos || 0);
         }
 
-        const data = await response.json();
-
-        const cardTutores = document.querySelector('#card-tutores .stat-number');
-        const cardAnuncios = document.querySelector('#card-anuncios .stat-number');
-
-        if (cardTutores) cardTutores.textContent = data.tutores;
-        if (cardAnuncios) cardAnuncios.textContent = data.anuncios;
-        
-        renderAlumnosChart(data.alumnos);
-
     } catch (error) {
-        console.error('Error en loadDashboardData:', error);
+        console.error('Error cargando dashboard:', error);
     }
 }
 
@@ -65,38 +48,33 @@ function renderAlumnosChart(totalAlumnos) {
     const ctx = document.getElementById('alumnosChart');
     if (!ctx) return;
 
-    const metaAlumnos = 500;
+    if (window.alumnosChartInstance) {
+        window.alumnosChartInstance.destroy();
+    }
+
+    const metaAlumnos = 500; 
     const faltantes = Math.max(0, metaAlumnos - totalAlumnos);
 
-    new Chart(ctx, {
+    window.alumnosChartInstance = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: ['Registrados', 'Faltantes'],
+            labels: ['Registrados', 'Espacio Disponible'],
             datasets: [{
-                label: 'Alumnos',
                 data: [totalAlumnos, faltantes],
                 backgroundColor: [
-                    'rgba(9, 105, 218, 1)',
-                    'rgba(42, 49, 57, 1)'
+                    'rgba(88, 101, 242, 1)', 
+                    'rgba(227, 229, 232, 1)'
                 ],
-                borderColor: [
-                    'rgba(9, 105, 218, 1)',
-                    'rgba(42, 49, 57, 1)'
-                ],
-                borderWidth: 1
+                borderWidth: 0
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            cutout: '70%',
+            cutout: '75%',
             plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    enabled: true
-                }
+                legend: { display: false },
+                tooltip: { enabled: true }
             }
         }
     });

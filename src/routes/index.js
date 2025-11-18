@@ -8,6 +8,7 @@ const vehiculosRoutes = require('./vehiculos.routes');
 const anunciosRoutes = require('./anuncios.routes');
 const asistenciaRoutes = require('./asistencia.routes');
 const usuariosRoutes = require('./usuarios.routes');
+const statsRoutes = require('./stats.routes'); 
 
 router.use('/auth', authRoutes);
 router.use('/alumnos', alumnosRoutes);
@@ -16,5 +17,6 @@ router.use('/vehiculos', vehiculosRoutes);
 router.use('/anuncios', anunciosRoutes);
 router.use('/asistencia', asistenciaRoutes);
 router.use('/usuarios', usuariosRoutes);
+router.use('/stats', statsRoutes); 
 
 module.exports = router;

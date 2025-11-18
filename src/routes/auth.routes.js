@@ -5,8 +5,9 @@ const { isAuthenticated, isAdmin } = require('../middlewares/auth.middleware');
 const { uploadImage } = require('../middlewares/upload.middleware');
 
 router.post('/login', controller.login);
+router.get('/verificar', controller.verificar); 
 router.post('/logout', controller.logout);
-router.get('/check', isAuthenticated, controller.checkAuth);
+
 router.post('/forgot-password', controller.forgotPassword);
 router.post('/reset-password', controller.resetPassword);
 

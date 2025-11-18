@@ -10,20 +10,22 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors({
-    origin: 'http://localhost:5173',
-    credentials: true
+    origin: 'http://localhost:1000',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE']
 }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'un-secreto-de-fallback-muy-seguro',
+    name: 'sid_escolar',
+    secret: process.env.SESSION_SECRET || 'clave_secreta_desarrollo',
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: process.env.NODE_ENV === 'production',
-        httpOnly: true,
+        secure: false, 
+        httpOnly: true, 
         maxAge: 1000 * 60 * 60 * 24 
     }
 }));
