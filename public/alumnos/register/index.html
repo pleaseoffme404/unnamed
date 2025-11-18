@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrar Alumno - Unnamed</title>
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="/assets/css/header.css">
+</head>
+<body>
+
+    <header class="main-header"></header>
+
+    <main class="auth-page-wrapper">
+        <div class="auth-container" style="max-width: 450px;">
+            <h2>Registrar Nuevo Alumno</h2>
+            
+            <form id="register-student-form" novalidate enctype="multipart/form-data">
+                
+                <div class="user-box">
+                    <input type="text" id="nombre_completo" name="nombre_completo" required placeholder=" ">
+                    <label for="nombre_completo">Nombre Completo</label>
+                </div>
+
+                <div class="user-box">
+                    <input type="text" id="boleta" name="boleta" required placeholder=" ">
+                    <label for="boleta">Boleta / Matrícula</label>
+                </div>
+
+                <div class="user-box">
+                    <input type="text" id="grupo_id" name="grupo_id" required placeholder=" ">
+                    <label for="grupo_id">ID de Grupo (Ej: 5IM9)</label>
+                </div>
+
+                <div class="user-box">
+                    <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" placeholder=" ">
+                    <label for="fecha_nacimiento">Fecha de Nacimiento (Opcional)</label>
+                </div>
+
+                <div class="user-box">
+                    <select id="genero" name="genero" required>
+                        <option value="" disabled selected></option>
+                        <option value="masculino">Masculino</option>
+                        <option value="femenino">Femenino</option>
+                        <option value="otro">Otro</option>
+                        <option value="no-especificar">No especificar</option>
+                    </select>
+                    <label for="genero">Género</label>
+                </div>
+
+                <div class="user-box">
+                    <input type="file" id="foto_alumno" name="foto_alumno" accept="image/*" style="padding-top: 14px;">
+                    <label for="foto_alumno" style="top: -20px; font-size: 12px;">Foto (Opcional)</label>
+                </div>
+
+                <div id="error-message" class="error-text" style="color: var(--accent-red); text-align: center; margin-bottom: 15px;"></div>
+                <div id="success-message" class="success-text" style="color: green; text-align: center; margin-bottom: 15px;"></div>
+
+                <div class="auth-actions">
+                    <button type="submit" class="btn">Registrar Alumno</button>
+                </div>
+            </form>
+        </div>
+    </main>
+    
+    <script src="/assets/js/api.js"></script>
+    <script src="/assets/js/header.js"></script>
+    <script src="/assets/js/alumnos-register.js"></script>
+</body>
+</html>
