@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrar Usuario - Unnamed</title>
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="/assets/css/header.css">
+</head>
+<body>
+
+    <header class="main-header"></header>
+
+    <main class="auth-page-wrapper">
+        <div class="auth-container">
+            <h2>Registrar Nuevo Admin</h2>
+            <form id="register-form" novalidate>
+                <div class="user-box">
+                    <input type="text" id="username" name="username" required placeholder=" ">
+                    <label for="username">Usuario</label>
+                </div>
+                <div class="user-box">
+                    <input type="email" id="correo" name="correo" required placeholder=" ">
+                    <label for="correo">Correo Electrónico</label>
+                </div>
+                <div class="user-box">
+                    <input type="password" id="password" name="password" required placeholder=" ">
+                    <label for="password">Contraseña</label>
+                </div>
+                
+                <div id="error-message" class="error-text" style="color: var(--accent-red); text-align: center; margin-bottom: 15px;"></div>
+                <div id="success-message" class="success-text" style="color: green; text-align: center; margin-bottom: 15px;"></div>
+
+                <div class="auth-actions">
+                    <button type="submit" class="btn">Registrar Usuario</button>
+                </div>
+            </form>
+        </div>
+    </main>
+    
+    <script src="/assets/js/api.js"></script>
+    <script src="/assets/js/header.js"></script>
+    <script src="/assets/js/user-register.js"></script>
+</body>
+</html>
