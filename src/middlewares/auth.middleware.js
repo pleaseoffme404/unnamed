@@ -1,13 +1,13 @@
 const isAuthenticated = (req, res, next) => {
-    if (req.session.autenticado && req.session.user) {
+    if (req.session.user) {
         return next();
     }
     
-    if (req.headers.accept && req.headers.accept.includes('application/json')) {
-         return res.status(401).json({ success: false, message: 'No autorizado. Debes iniciar sesión.' });
+    if (req.accepts('html')) {
+        return res.redirect('/'); 
     }
-
-    res.redirect('/');
+    
+    res.status(401).json({ message: 'Acceso no autorizado. Debes iniciar sesión.' });
 };
 
 module.exports = {
