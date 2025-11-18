@@ -1,0 +1,102 @@
+CREATE DATABASE IF NOT EXISTS unnamed;
+use unnamed;
+CREATE TABLE Usuarios (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    correo VARCHAR(100) NOT NULL UNIQUE
+);
+
+CREATE TABLE Grupos (
+    id VARCHAR(10) PRIMARY KEY, 
+    grado VARCHAR(10) NOT NULL, 
+    maestro_tutor VARCHAR(100),
+    horario_entrada TIME NOT NULL,
+    horario_salida TIME NOT NULL,
+    tolerancia_minutos INT DEFAULT 10
+);
+
+CREATE TABLE Alumnos (
+    boleta VARCHAR(20) PRIMARY KEY,
+    nombre_completo VARCHAR(150) NOT NULL,
+    fecha_nacimiento DATE,
+    genero ENUM('masculino', 'femenino', 'otro', 'no-especificar'),
+    foto_url VARCHAR(255) NULL,
+    grupo_id VARCHAR(10) NOT NULL,
+    
+    FOREIGN KEY (grupo_id) REFERENCES Grupos(id)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
+        
+    INDEX idx_alumno_nombre (nombre_completo)
+);
+
+CREATE TABLE Tutores (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre_completo VARCHAR(150) NOT NULL,
+    genero ENUM('masculino', 'femenino', 'otro', 'no-especificar'),
+    movil VARCHAR(15) NOT NULL,
+    correo VARCHAR(100) NOT NULL UNIQUE,
+    metodo_notificacion ENUM('movil', 'correo', 'ambos', 'ninguno') NOT NULL,
+    foto_url VARCHAR(255) NULL,
+    
+    INDEX idx_tutor_nombre (nombre_completo)
+);
+
+CREATE TABLE Alumno_Tutor (
+    alumno_boleta VARCHAR(20) NOT NULL,
+    tutor_id INT NOT NULL,
+    
+    PRIMARY KEY (alumno_boleta, tutor_id),
+    
+    FOREIGN KEY (alumno_boleta) REFERENCES Alumnos(boleta)
+        ON DELETE CASCADE,
+    FOREIGN KEY (tutor_id) REFERENCES Tutores(id)
+        ON DELETE CASCADE,
+        
+    -- Índice para buscar rápido los alumnos de un tutor
+    INDEX idx_tutor_alumnos (tutor_id)
+);
+
+CREATE TABLE Historial_Registros (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    alumno_boleta VARCHAR(20) NOT NULL,
+    timestamp_registro DATETIME NOT NULL,
+    tipo_registro ENUM('Entrada', 'Salida') NOT NULL,
+    
+    fecha_registro DATE AS (DATE(timestamp_registro)) STORED, 
+    
+    FOREIGN KEY (alumno_boleta) REFERENCES Alumnos(boleta)
+        ON DELETE CASCADE,
+        
+    INDEX idx_reporte_fecha_alumno (fecha_registro, alumno_boleta),
+    INDEX idx_historial_alumno (alumno_boleta)
+);
+
+CREATE TABLE Alertas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    mensaje TEXT NOT NULL,
+    prioridad ENUM('baja', 'moderada', 'urgente') NOT NULL,
+    es_visible BOOLEAN DEFAULT TRUE,
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fecha_modificacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    INDEX idx_alertas_visibles_recientes (es_visible, fecha_creacion DESC)
+);
+
+CREATE TABLE Vehiculos (
+    alumno_boleta VARCHAR(20) PRIMARY KEY, 
+    tipo VARCHAR(50) NOT NULL, 
+    color VARCHAR(30),
+    marca VARCHAR(50),
+    foto_url VARCHAR(255) NULL,
+    
+    FOREIGN KEY (alumno_boleta) REFERENCES Alumnos(boleta)
+        ON DELETE CASCADE
+);
+INSERT INTO Usuarios (username, password_hash, correo) 
+VALUES (
+    'admin', 
+    '$2b$10$f9a/A8tX5Bm4JlQ2G8ApZ.eBV9aFg1A/3cK.B6alg6pAg2gA/g4gE', 
+    'admin@example.com'
+);
