@@ -5,16 +5,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (isLoginPage) return;
 
-    const headerContainer = document.querySelector('header'); 
+    const headerContainer = document.querySelector('header');
 
     async function initializeHeader() {
         try {
             const data = await apiFetch('/api/auth/verificar', 'GET');
             
             if (data.success && data.autenticado && data.tipo === 'admin') {
-                renderHeader(data.usuario); 
+                renderHeader(data.usuario);
             } else {
-                window.location.href = '/index.html'; 
+                window.location.href = '/index.html';
             }
         } catch (error) {
             console.error('Error de sesión:', error);
@@ -45,10 +45,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div id="admin-user-info" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
                     <span id="admin-username" style="font-weight: 500; font-size: 14px;">${user.nombre || user.email}</span>
                     <img src="${user.imagen || '/assets/img/default-avatar.png'}" alt="Avatar" id="admin-avatar" 
-                         style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 2px solid var(--bg-tertiary);">
+                         style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 2px solid var(--bg-input);">
                 </div>
 
-                <button id="admin-logout-button" style="margin-left: 15px; padding: 5px 10px; font-size: 12px;" class="btn btn-secondary">Salir</button>
+                <button id="admin-logout-button" style="margin-left: 15px;" class="btn btn-danger">Salir</button>
 
                 <svg id="switcher" class="switcher" aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" style="margin-left: 15px;">
                     <circle class="switcher__sun" cx="12" cy="12" r="6" mask="url(#moon-mask)" fill="currentColor" />
@@ -71,8 +71,17 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
 
         headerContainer.innerHTML = html;
-        
         setupListeners();
+        
+        const currentTheme = localStorage.getItem('theme');
+        const switcher = document.getElementById('switcher');
+        if (currentTheme === 'dark' && switcher) {
+            document.body.classList.add('dark-theme');
+            switcher.classList.add('switcher--dark');
+        } else {
+            document.body.classList.remove('dark-theme');
+            if(switcher) switcher.classList.remove('switcher--dark');
+        }
     }
 
     function setupListeners() {
@@ -92,25 +101,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if(switcher) {
             switcher.addEventListener('click', () => {
                 const body = document.body;
-                const isLight = body.classList.contains('light-theme');
-                if (isLight) {
-                    body.classList.remove('light-theme');
-                    switcher.classList.add('switcher--dark');
-                    localStorage.setItem('theme', 'dark');
-                } else {
-                    body.classList.add('light-theme');
+                const isDark = body.classList.contains('dark-theme');
+                
+                if (isDark) {
+                    body.classList.remove('dark-theme');
                     switcher.classList.remove('switcher--dark');
                     localStorage.setItem('theme', 'light');
+                } else {
+                    body.classList.add('dark-theme');
+                    switcher.classList.add('switcher--dark');
+                    localStorage.setItem('theme', 'dark');
                 }
             });
-            const savedTheme = localStorage.getItem('theme');
-            if(savedTheme === 'light') {
-                document.body.classList.add('light-theme');
-                switcher.classList.remove('switcher--dark');
-            } else {
-                document.body.classList.remove('light-theme');
-                switcher.classList.add('switcher--dark');
-            }
         }
     }
 

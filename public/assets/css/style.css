@@ -174,3 +174,42 @@ input:focus, select:focus, textarea:focus {
 
 .theme-switch-wrapper { position: absolute; top: 20px; right: 20px; }
 .hidden { display: none !important; }
+
+.switcher {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: color 0.5s;
+}
+.switcher:hover {
+    color: var(--text-primary);
+}
+
+.switcher__sun-beams {
+    transform-origin: center;
+    transition: transform 0.5s ease, opacity 0.2s ease;
+}
+
+.switcher__sun {
+    transform-origin: center;
+    transition: transform 0.5s ease;
+}
+
+.switcher__moon {
+    transform-origin: center;
+    transition: transform 0.5s ease;
+}
+
+.switcher--dark .switcher__sun-beams {
+    transform: rotate(45deg);
+    opacity: 0;
+}
+
+.switcher--dark .switcher__sun {
+    transform: scale(0.6);
+}
+
+.switcher--dark .switcher__moon {
+    transform: translateX(-8px);
+}

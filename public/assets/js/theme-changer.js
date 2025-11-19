@@ -1,35 +1,33 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const switcher = document.getElementById('switcher');
-    const body = document.body;
-
-    if (!switcher) {
-        return;
-    }
-
-    const applyTheme = (theme) => {
-        if (theme === 'light') {
-            body.classList.add('light-theme');
-            switcher.classList.remove('switcher--dark');
-        } else {
-            body.classList.remove('light-theme');
-            switcher.classList.add('switcher--dark');
-        }
-    };
-
-    let currentTheme = localStorage.getItem('theme');
-    if (!currentTheme) {
-        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        currentTheme = prefersDark ? 'dark' : 'light';
-    }
+    const switcher = document.querySelector('#switcher');
     
-    applyTheme(currentTheme);
-    localStorage.setItem('theme', currentTheme); 
+    function initTheme() {
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        applyTheme(savedTheme);
+    }
 
-    switcher.addEventListener('click', () => {
-        const isLight = body.classList.contains('light-theme');
-        const newTheme = isLight ? 'dark' : 'light';
+    function applyTheme(theme) {
+        const body = document.body;
         
-        localStorage.setItem('theme', newTheme);
-        applyTheme(newTheme);
-    });
+        if (theme === 'dark') {
+            body.classList.add('dark-theme');
+            if(switcher) switcher.classList.add('switcher--dark');
+        } else {
+            body.classList.remove('dark-theme');
+            if(switcher) switcher.classList.remove('switcher--dark');
+        }
+    }
+
+    if (switcher) {
+        switcher.addEventListener('click', () => {
+            const body = document.body;
+            const isDark = body.classList.contains('dark-theme');
+            
+            const newTheme = isDark ? 'light' : 'dark';
+            localStorage.setItem('theme', newTheme);
+            applyTheme(newTheme);
+        });
+    }
+
+    initTheme();
 });
