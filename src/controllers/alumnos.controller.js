@@ -4,6 +4,19 @@ const csv = require('csv-parser');
 const { Readable } = require('stream');
 const { saveImage, deleteImage } = require('./utils.controller');
 
+const getGrupos = async (req, res) => {
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        const [rows] = await connection.query('SELECT grado, grupo FROM grupos_disponibles ORDER BY grado ASC, grupo ASC');
+        res.status(200).json({ success: true, data: rows });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error al obtener grupos.' });
+    } finally {
+        if (connection) connection.release();
+    }
+};
+
 const registerAlumno = async (req, res) => {
     const { 
         correo_electronico, telefono, contrasena,
@@ -64,14 +77,16 @@ const getAllAlumnos = async (req, res) => {
         const [rows] = await connection.query(
             `SELECT 
                 p.id_perfil_alumno, p.nombres, p.apellido_paterno, p.apellido_materno,
-                p.curp, p.grado, p.grupo, p.imagen_url,
-                u.id_usuario, u.correo_electronico, u.telefono, u.esta_activo
+                p.curp, p.grado, p.grupo, p.imagen_url, 
+                u.esta_activo, 
+                u.id_usuario, u.correo_electronico, u.telefono
             FROM perfil_alumno p
             JOIN usuarios u ON p.id_usuario_fk = u.id_usuario
             ORDER BY p.apellido_paterno, p.apellido_materno, p.nombres`
         );
         res.status(200).json({ success: true, data: rows });
     } catch (error) {
+        console.error(error); 
         res.status(500).json({ success: false, message: 'Error interno del servidor.' });
     } finally {
         if (connection) connection.release();
@@ -282,12 +297,12 @@ const registerAlumnosMasivo = async (req, res) => {
         });
 };
 
-
 module.exports = {
     registerAlumno,
     getAllAlumnos,
     getAlumnoById,
     updateAlumno,
     deleteAlumno,
-    registerAlumnosMasivo
+    registerAlumnosMasivo,
+    getGrupos
 };

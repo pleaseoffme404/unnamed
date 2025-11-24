@@ -3,6 +3,57 @@ document.addEventListener('DOMContentLoaded', () => {
     const feedbackEl = document.getElementById('form-feedback');
     const photoPreview = document.getElementById('photo-preview');
     const photoInput = document.getElementById('imagen');
+    const gradoSelect = document.getElementById('grado');
+    const grupoSelect = document.getElementById('grupo');
+
+    let catalogoGrupos = [];
+
+    loadGradosGrupos();
+
+    async function loadGradosGrupos() {
+        if (!gradoSelect || !grupoSelect) return;
+        
+        try {
+            const response = await apiFetch('/api/alumnos/grupos', 'GET');
+            if (response.success) {
+                catalogoGrupos = response.data;
+                populateGrades();
+            }
+        } catch (error) {
+            console.error(error);
+            gradoSelect.innerHTML = '<option value="">Error cargando</option>';
+        }
+    }
+
+    function populateGrades() {
+        const uniqueGrados = [...new Set(catalogoGrupos.map(item => item.grado))];
+        gradoSelect.innerHTML = '<option value="">Seleccionar</option>';
+        
+        uniqueGrados.forEach(grado => {
+            const option = document.createElement('option');
+            option.value = grado;
+            option.textContent = `${grado}° Semestre`;
+            gradoSelect.appendChild(option);
+        });
+    }
+
+    if (gradoSelect) {
+        gradoSelect.addEventListener('change', () => {
+            const selectedGrado = parseInt(gradoSelect.value);
+            grupoSelect.innerHTML = '<option value="">Seleccionar</option>';
+            
+            if (!selectedGrado) return;
+
+            const gruposFiltrados = catalogoGrupos.filter(item => item.grado === selectedGrado);
+            
+            gruposFiltrados.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.grupo;
+                option.textContent = `Grupo ${item.grupo}`;
+                grupoSelect.appendChild(option);
+            });
+        });
+    }
 
     if (photoPreview && photoInput) {
         photoPreview.addEventListener('click', () => photoInput.click());
@@ -31,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const formData = new FormData(registerForm);
 
             try {
-                const response = await apiFetch('/api/alumnos', 'POST', formData); 
+                const response = await apiFetch('/api/alumnos', 'POST', formData);
                 
                 if (response.success) {
                     feedbackEl.textContent = 'Alumno registrado exitosamente.';
@@ -53,4 +104,3 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
-

@@ -3,43 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Subida Masiva - Alumnos</title>
-    <link rel="stylesheet" href="/assets/css/style.css">
-    <link rel="stylesheet" href="/assets/css/header.css">
+    <title>Carga Masiva - Unnamed</title>
+    
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/header.css">
+    <link rel="stylesheet" href="../../assets/css/alumnos.css">
 </head>
 <body>
 
     <header class="main-header"></header>
 
-    <main class="auth-page-wrapper">
-        <div class="auth-container" style="max-width: 500px;">
-            <h2>Subida Masiva de Alumnos (CSV)</h2>
-            
-            <form id="csv-upload-form" enctype="multipart/form-data">
-                <div class="user-box">
-                    <input type="file" id="archivo_csv" name="archivo_csv" accept=".csv" required style="padding-top: 14px;">
-                    <label for="archivo_csv" style="top: -20px; font-size: 12px;">Archivo .csv</label>
+    <main class="page-content">
+        <div class="register-card" style="max-width: 600px;">
+            <div class="register-header">
+                <h2 class="page-title">Carga Masiva de Alumnos</h2>
+                <a href="/alumnos/index.html" class="btn btn-secondary">Volver</a>
+            </div>
+
+            <div style="background-color: var(--bg-input); padding: 15px; border-radius: 6px; margin-bottom: 20px; font-size: 13px; color: var(--text-secondary);">
+                <strong>Instrucciones:</strong>
+                <p>Sube un archivo .CSV con las siguientes columnas (el orden importa):</p>
+                <code style="display:block; margin: 8px 0; font-family: monospace; background: var(--bg-panel); padding: 8px; border-radius: 4px;">
+                    correo_electronico, telefono, contrasena, nombres, apellido_paterno, apellido_materno, fecha_nacimiento, curp, nss, tipo_sangre, grado, grupo
+                </code>
+            </div>
+
+            <form id="mass-register-form">
+                <div class="upload-area" id="upload-area">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" style="margin-bottom: 10px;">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    <p style="margin-bottom: 10px;">Arrastra tu archivo CSV aquí o</p>
+                    <label for="csvFile" class="btn btn-secondary">Seleccionar Archivo</label>
+                    <input type="file" id="csvFile" name="csvFile" accept=".csv" style="display: none;">
+                    <p id="file-name" style="margin-top: 10px; font-weight: 600; color: var(--accent-primary);"></p>
                 </div>
 
-                <div id="error-message" class="error-text" style="color: var(--accent-red); text-align: center; margin-bottom: 15px;"></div>
-                <div id="success-message" class="success-text" style="color: green; text-align: center; margin-bottom: 15px;"></div>
-
-                <div class="auth-actions">
-                    <button type="submit" class="btn">Subir Alumnos</button>
+                <div class="form-actions-footer">
+                    <div id="form-feedback" class="feedback-message" style="width: 100%; text-align: left;"></div>
+                    <button type="submit" class="btn btn-primary" id="btn-upload" disabled>Procesar Archivo</button>
                 </div>
             </form>
-            
-            <div style="margin-top: 25px; font-size: 14px; color: var(--text-secondary);">
-                <strong>Formato del CSV:</strong>
-                <p>El archivo debe tener las siguientes columnas:</p>
-                <code style="background: var(--bg-tertiary); padding: 2px 5px; border-radius: 4px;">boleta,nombre_completo,fecha_nacimiento,genero,grupo_id</code>
-                <p style="margin-top: 10px;">La columna `fecha_nacimiento` debe estar en formato YYYY-MM-DD y es opcional.</p>
+
+            <div id="error-log" style="margin-top: 20px; display: none;">
+                <h4 style="color: var(--danger); font-size: 14px; margin-bottom: 10px;">Reporte de Errores:</h4>
+                <div class="log-container" id="log-content"></div>
             </div>
         </div>
     </main>
-    
-    <script src="/assets/js/api.js"></script>
-    <script src="/assets/js/header.js"></script>
-    <script src="/assets/js/alumnos-mass-register.js"></script>
+
+    <script src="../../assets/js/api.js"></script>
+    <script src="../../assets/js/header.js"></script>
+    <script src="../../assets/js/alumnos-mass-register.js"></script>
+
 </body>
 </html>

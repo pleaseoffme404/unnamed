@@ -3,151 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Unnamed - Gestión Tutores</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../assets/css/style.css"> <link rel="stylesheet" href="../assets/css/header.css"> </head>
+    <title>Tutores - Unnamed Admin</title>
+    
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/header.css">
+    <link rel="stylesheet" href="../assets/css/table-view.css">
+    <link rel="stylesheet" href="../assets/css/tutores.css">
+</head>
 <body>
 
-    <header class="main-header">
-        <div class="header-left">
-             <div class="header-icon-placeholder"></div>
-             <h1 class="header-title">Unnamed</h1>
-        </div>
-        <nav class="header-nav">            
-            <a href="../qrCode/index.html">Scan QR</a>
-            <a href="dataTutor.html" class="active">Datos Tutores</a>
-            <a href="dataAlumno.html" >Datos Alumnos</a>
-            <a href="regisTutor.html">Añadir Tutor</a>
-            <a href="regisAlumno.html">Añadir Alumno</a>
-            <a href="../alerts/index.html">Alertas</a> 
-            <a href="../history/index.html">Historial</a> 
-            <a href="index.html" >Dashboard</a> </nav>
-        <div class="header-right">
-            <svg id="switcher" class="switcher" aria-hidden="true" width="24" height="24" viewBox="0 0 24 24">
-                <circle class="switcher__sun" cx="12" cy="12" r="6" mask="url(#moon-mask)" fill="currentColor" />
-                <g class="switcher__sun-beams" stroke="currentColor">
-                    <line x1="12" y1="1" x2="12" y2="3" />
-                    <line x1="12" y1="21" x2="12" y2="23" />
-                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-                    <line x1="1" y1="12" x2="3" y2="12" />
-                    <line x1="21" y1="12" x2="23" y2="12" />
-                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-                </g>
-                <mask id="moon-mask">
-                    <rect x="0" y="0" width="100%" height="100%" fill="white" />
-                    <circle class="switcher__moon" cx="24" cy="10" r="6" fill="black" />
-                </mask>
-            </svg>
-        </div>
-    </header>
+    <header class="main-header"></header>
 
-    <main class="dashboard-content">
-        <div class="dashboard-row search-row">
-            <div class="dashboard-col search-col-tutor">
-                <h3>Buscar Tutor por Nombre</h3>
-                <div class="search-bar-container">
-                    <input type="text" id="search-tutor-name" placeholder="Nombre completo del tutor..." class="search-input">
-                    <button class="search-button">Buscar</button>
-                    <small class="error-message"></small>
-                </div>
+    <main class="page-content">
+        
+        <div class="search-grid">
+            <div class="search-box">
+                <label for="search-input">Buscar Tutor</label>
+                <input type="text" id="search-input" placeholder="Nombre, Correo o Teléfono...">
             </div>
-            <div class="dashboard-col search-col-student">
-                <h3>Buscar Tutor por Alumno</h3>
-                 <div class="search-bar-container">
-                    <input type="text" id="search-student-name" placeholder="Nombre completo del alumno..." class="search-input">
-                    <button class="search-button">Buscar</button>
-                    <small class="error-message"></small>
-                </div>
-                <div class="student-tutor-results" style="display: none;"> <div class="student-info-box">
-                        <div class="student-photo-placeholder"></div>
-                        <div class="student-details">
-                            <span class="student-name">Nombre Alumno Ejemplo</span>
-                            <span class="student-id">Boleta: 202XXXXXXX</span>
-                        </div>
-                    </div>
-                    <div class="tutor-info-boxes">
-                        <div class="tutor-box">
-                            <span>Tutor 1: Nombre Apellido</span>
-                        </div>
-                        <a href="regisTutor.html" class="tutor-box add-tutor-link">
-                            <span>+</span>
-                        </a>
-                         </div>
-                </div>
+            <div class="action-box">
+                <a href="/tutores/register/index.html" class="btn btn-primary" style="height: 42px; display:flex; align-items:center; justify-content:center; text-decoration:none;">
+                    <span>+</span> Nuevo Tutor
+                </a>
             </div>
         </div>
 
-        <div class="dashboard-row table-row">
-            <h3>Listado de Tutores</h3>
-            <div class="table-container">
-                <table>
+        <div id="list-view" class="view-section">
+            <div class="table-wrapper">
+                <table id="tutores-table">
                     <thead>
                         <tr>
-                            <th>Nombre(s) y Apellidos</th>
-                            <th>Número</th>
-                            <th>Correo</th>
-                            <th>Notificaciones</th>
-                            <th>Alumno Asociado</th>
-                            <th>Acciones</th>
+                            <th>Tutor</th>
+                            <th>Contacto</th>
+                            <th>Alumnos</th>
+                            <th>Estado</th>
+                            <th style="text-align: right;">Acciones</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="tutores-tbody">
                         <tr>
-                            <td>Juan Pérez García</td>
-                            <td>5512345678</td>
-                            <td>juan.perez@email.com</td>
-                            <td>Ambos</td>
-                            <td>María López (2024123456)</td>
-                            <td><button class="action-button admin-button" data-tutor-id="1">Administrar</button></td>
+                            <td colspan="5" style="text-align: center; padding: 40px;">Cargando...</td>
                         </tr>
-                         <tr>
-                            <td>Ana Martínez López</td>
-                            <td>5598765432</td>
-                            <td>ana.martinez@email.com</td>
-                            <td>Correo</td>
-                            <td>Pedro Gómez (2024654321)</td>
-                            <td><button class="action-button admin-button" data-tutor-id="2">Administrar</button></td>
-                        </tr>
-                        </tbody>
+                    </tbody>
                 </table>
             </div>
         </div>
+
+        <div id="detail-view" class="view-section hidden">
+            <div class="register-card">
+                <div class="register-header">
+                    <h2 class="page-title">Editar Tutor</h2>
+                    <button id="btn-close-detail" class="btn btn-secondary">Cerrar</button>
+                </div>
+
+                <form id="tutor-form">
+                    <input type="hidden" id="tutor-id" name="id">
+                    <input type="hidden" id="tutor-active" name="esta_activo">
+                    <input type="hidden" id="tutor-image-url" name="imagen_url_actual">
+
+                    <div class="form-grid-layout">
+                        <div class="form-col-photo">
+                            <div class="photo-preview" id="photo-preview"></div>
+                            <input type="file" id="tutor-photo" name="imagen" accept="image/*" style="display: none;">
+                        </div>
+
+                        <div class="form-col-data">
+                            <div class="row-2">
+                                <div class="form-group">
+                                    <label>Nombres</label>
+                                    <input type="text" id="d-nombres" name="nombres" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Apellidos</label>
+                                    <div style="display: flex; gap: 10px;">
+                                        <input type="text" id="d-paterno" name="apellido_paterno" placeholder="Paterno" required>
+                                        <input type="text" id="d-materno" name="apellido_materno" placeholder="Materno">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row-2">
+                                <div class="form-group">
+                                    <label>Email</label>
+                                    <input type="email" id="d-email" name="correo_electronico" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Teléfono</label>
+                                    <input type="tel" id="d-telefono" name="telefono">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Notificaciones</label>
+                                <select id="d-notif" name="notificaciones">
+                                    <option value="correo">Solo Correo</option>
+                                    <option value="ambas">Correo y App</option>
+                                    <option value="ninguna">Ninguna</option>
+                                </select>
+                            </div>
+
+                            <div class="form-section-title">Alumnos a Cargo</div>
+                            <div id="linked-students-container" class="linked-students-list">
+                                <p>Cargando...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions-footer space-between">
+                        <button type="button" id="btn-soft-delete" class="btn btn-danger">Desactivar Cuenta</button>
+                        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
     </main>
 
-    <footer class="main-footer">
-        <p>Endware Solutions 2025</p>
-    </footer>
+    <script src="../assets/js/api.js"></script>
+    <script src="../assets/js/header.js"></script>
+    <script src="../assets/js/tutores-manager.js"></script>
 
-    <div id="crud-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-button">&times;</span>
-            <h2>Administrar Tutor</h2>
-            <p>Aquí irían las opciones CRUD para el tutor seleccionado (ID: <span id="modal-tutor-id"></span>).</p>
-            <form id="crud-tutor-form">
-                <div class="form-group">
-                    <label for="tutor-name">Nombre Completo</label>
-                    <input type="text" id="tutor-name" name="tutor-name" required>
-                    <small class="error-message"></small>
-                 </div>
-                 <div class="form-group">
-                    <label for="tutor-phone">Teléfono</label>
-                    <input type="tel" id="tutor-phone" name="tutor-phone" required>
-                    <small class="error-message"></small>
-                 </div>
-                 <div class="form-group">
-                    <label for="tutor-email">Correo</label>
-                    <input type="email" id="tutor-email" name="tutor-email" required>
-                    <small class="error-message"></small>
-                 </div>
-                 <button type="submit" class="action-button">Guardar Cambios</button>
-                 <button type="button" class="action-button delete-button">Eliminar Tutor</button>
-             </form>
-        </div>
-    </div>
-
-    <script src="../assets/js/theme-changer.js"></script> <script src="../assets/js/input-validator.js"></script> <script src="../assets/js/modal-handler.js"></script> </body>
+</body>
 </html>

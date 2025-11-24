@@ -3,110 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registrar Alumno</title>
+    <title>Registrar Alumno - Unnamed</title>
+    
     <link rel="stylesheet" href="../../assets/css/style.css">
     <link rel="stylesheet" href="../../assets/css/header.css">
+    <link rel="stylesheet" href="../../assets/css/alumnos.css">
 </head>
 <body>
-    <header class="admin-header">
-        <div class="header-left">
-            <h1 class="header-title">Admin</h1>
-        </div>
-        
-        <nav class="header-nav">
-            <a href="/dashboard/index.html">Dashboard</a>
-            <a href="/alumnos/index.html" class="active">Alumnos</a>
-            <a href="/tutores/index.html">Tutores</a>
-            <a href="/historial/index.html">Historial</a>
-            <a href="/announcements/index.html">Anuncios</a>
-            <a href="/usuarios/register/index.html">Usuarios</a>
-        </nav>
 
-        <div class="header-right">
-            <div id="admin-user-info">
-                <img src="" alt="Avatar" id="admin-avatar">
-                <span id="admin-username">Cargando...</span>
+    <header class="main-header"></header>
+
+    <main class="page-content">
+        <div class="register-card">
+            <div class="register-header">
+                <h2 class="page-title">Nuevo Alumno</h2>
+                <a href="/alumnos/index.html" class="btn btn-secondary">Cancelar</a>
             </div>
-            <button id="admin-logout-button">Salir</button>
-            <label class="switch" title="Cambiar Tema">
-                <input type="checkbox" id="admin-theme-checkbox">
-                <span class="slider"></span>
-            </label>
-        </div>
-    </header>
 
-    <main>
-        <div class="form-container">
-            <h2>Registrar Nuevo Alumno</h2>
-            <p>Los campos con * son requeridos.</p>
-            
-            <div id="form-feedback" class="feedback-message" style="display: none;"></div>
+            <form id="register-student-form">
+                <div class="form-grid-layout">
+                    
+                    <div class="form-col-photo">
+                        <div class="photo-preview" id="photo-preview" title="Clic para subir foto"></div>
+                        <input type="file" id="imagen" name="imagen" accept="image/*" style="display: none;">
+                        <p style="font-size: 12px; color: var(--text-muted);">JPG o PNG, máx 5MB</p>
+                    </div>
 
-            <form id="form-registrar-alumno" enctype="multipart/form-data">
-                
-                <h3>Datos de la Cuenta (App Móvil)</h3>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="correo_electronico">Correo Electrónico *</label>
-                        <input type="email" id="correo_electronico" name="correo_electronico" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="contrasena">Contraseña Temporal *</label>
-                        <input type="password" id="contrasena" name="contrasena" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="telefono">Teléfono (Opcional)</label>
-                        <input type="tel" id="telefono" name="telefono">
+                    <div class="form-col-data">
+                        <div class="form-section-title" style="margin-top: 0;">Información Personal</div>
+                        <div class="row-2">
+                            <div class="form-group">
+                                <label for="nombres">Nombres *</label>
+                                <input type="text" id="nombres" name="nombres" required placeholder="Ej. Juan Pablo">
+                            </div>
+                            <div class="form-group">
+                                <label for="apellido_paterno">Apellido Paterno *</label>
+                                <input type="text" id="apellido_paterno" name="apellido_paterno" required placeholder="Ej. Pérez">
+                            </div>
+                        </div>
+
+                        <div class="row-2">
+                            <div class="form-group">
+                                <label for="apellido_materno">Apellido Materno</label>
+                                <input type="text" id="apellido_materno" name="apellido_materno" placeholder="Ej. López">
+                            </div>
+                            <div class="form-group">
+                                <label for="curp">CURP *</label>
+                                <input type="text" id="curp" name="curp" required maxlength="18" placeholder="18 caracteres">
+                            </div>
+                        </div>
+
+                        <div class="row-3">
+                            <div class="form-group">
+                                <label for="fecha_nacimiento">Fecha Nacimiento</label>
+                                <input type="date" id="fecha_nacimiento" name="fecha_nacimiento">
+                            </div>
+                            <div class="form-group">
+                                <label for="tipo_sangre">Tipo Sangre</label>
+                                <select id="tipo_sangre" name="tipo_sangre">
+                                    <option value="">Sel...</option>
+                                    <option value="A+">A+</option>
+                                    <option value="A-">A-</option>
+                                    <option value="B+">B+</option>
+                                    <option value="B-">B-</option>
+                                    <option value="O+">O+</option>
+                                    <option value="O-">O-</option>
+                                    <option value="AB+">AB+</option>
+                                    <option value="AB-">AB-</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="nss">NSS (Opcional)</label>
+                                <input type="text" id="nss" name="nss">
+                            </div>
+                        </div>
+
+                        <div class="form-section-title">Información Académica</div>
+                        <div class="row-2">
+                            <div class="form-group">
+                                <label for="grado">Semestre</label>
+                                <select id="grado" name="grado">
+                                    <option value="">Cargando...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="grupo">Grupo</label>
+                                <select id="grupo" name="grupo">
+                                    <option value="">Seleccione Semestre</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-section-title">Cuenta de Acceso</div>
+                        <div class="row-2">
+                            <div class="form-group">
+                                <label for="correo_electronico">Correo Electrónico *</label>
+                                <input type="email" id="correo_electronico" name="correo_electronico" required placeholder="alumno@escuela.com">
+                            </div>
+                            <div class="form-group">
+                                <label for="telefono">Teléfono</label>
+                                <input type="tel" id="telefono" name="telefono" placeholder="10 dígitos">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="contrasena">Contraseña *</label>
+                            <input type="password" id="contrasena" name="contrasena" required placeholder="Mínimo 6 caracteres">
+                        </div>
+
                     </div>
                 </div>
 
-                <h3>Datos del Perfil del Alumno</h3>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="nombres">Nombres *</label>
-                        <input type="text" id="nombres" name="nombres" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="apellido_paterno">Apellido Paterno *</label>
-                        <input type="text" id="apellido_paterno" name="apellido_paterno" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="apellido_materno">Apellido Materno</label>
-                        <input type="text" id="apellido_materno" name="apellido_materno">
-                    </div>
-                    <div class="form-group">
-                        <label for="curp">CURP *</label>
-                        <input type="text" id="curp" name="curp" required minlength="18" maxlength="18">
-                    </div>
-                    <div class="form-group">
-                        <label for="fecha_nacimiento">Fecha de Nacimiento</label>
-                        <input type="date" id="fecha_nacimiento" name="fecha_nacimiento">
-                    </div>
-                    <div class="form-group">
-                        <label for="nss">NSS</label>
-                        <input type="text" id="nss" name="nss">
-                    </div>
-                    <div class="form-group">
-                        <label for="tipo_sangre">Tipo de Sangre</label>
-                        <input type="text" id="tipo_sangre" name="tipo_sangre" placeholder="Ej: O+">
-                    </div>
-                    <div class="form-group">
-                        <label for="grado">Grado</label>
-                        <input type="text" id="grado" name="grado" placeholder="Ej: 5to">
-                    </div>
-                    <div class="form-group">
-                        <label for="grupo">Grupo</label>
-                        <input type="text" id="grupo" name="grupo" placeholder="Ej: A">
-                    </div>
-                    <div class="form-group">
-                        <label for="imagen">Foto de Perfil</label>
-                        <input type="file" id="imagen" name="imagen" accept="image/png, image/jpeg">
-                    </div>
-                </div>
-                
-                <div class="form-actions">
+                <div class="form-actions-footer">
+                    <div id="form-feedback" class="feedback-message"></div>
                     <button type="submit" class="btn btn-primary">Registrar Alumno</button>
-                    <a href="/alumnos/index.html" class="btn btn-secondary">Cancelar</a>
                 </div>
             </form>
         </div>
@@ -115,5 +124,6 @@
     <script src="../../assets/js/api.js"></script>
     <script src="../../assets/js/header.js"></script>
     <script src="../../assets/js/user-register.js"></script>
+
 </body>
 </html>

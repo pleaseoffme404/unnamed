@@ -2,14 +2,44 @@ document.addEventListener('DOMContentLoaded', () => {
     const tableBody = document.getElementById('alumnos-tbody');
     const searchInput = document.getElementById('search-input');
     const filterGrade = document.getElementById('filter-grade');
+    
+
     const listView = document.getElementById('list-view');
     const detailView = document.getElementById('detail-view');
     const studentForm = document.getElementById('student-form');
-
+    const btnCloseDetail = document.getElementById('btn-close-detail');
+    
     let allAlumnos = []; 
 
-    fetchAlumnos();
-    setupListeners();
+    init();
+
+    function init() {
+        loadFilterOptions();
+        fetchAlumnos();
+        setupListeners();
+    }
+
+    async function loadFilterOptions() {
+        if (!filterGrade) return;
+        
+        try {
+            const response = await apiFetch('/api/alumnos/grupos', 'GET');
+            if (response.success) {
+                const grupos = response.data;
+                const uniqueGrados = [...new Set(grupos.map(g => g.grado))].sort();
+                
+                filterGrade.innerHTML = '<option value="">Todos los Grados</option>';
+                uniqueGrados.forEach(grado => {
+                    const option = document.createElement('option');
+                    option.value = grado;
+                    option.textContent = `${grado}° Grado`;
+                    filterGrade.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error("Error cargando filtros:", error);
+        }
+    }
 
     async function fetchAlumnos() {
         try {
@@ -18,24 +48,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 allAlumnos = response.data;
                 renderTable(allAlumnos);
             } else {
-                tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--danger);">Error cargando datos.</td></tr>`;
+                if (tableBody) tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--danger);">Error cargando datos.</td></tr>`;
             }
         } catch (error) {
             console.error(error);
+            if (tableBody) tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--danger);">Error de servidor.</td></tr>`;
         }
     }
 
     function renderTable(data) {
+        if (!tableBody) return;
         tableBody.innerHTML = '';
+
         if (data.length === 0) {
-            tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--text-muted);">No hay alumnos registrados.</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">No se encontraron alumnos.</td></tr>`;
             return;
         }
+
         data.forEach(alumno => {
             const row = document.createElement('tr');
             const avatar = alumno.imagen_url || '../assets/img/default-avatar.png';
             const nombre = `${alumno.nombres} ${alumno.apellido_paterno}`;
-            const statusColor = alumno.esta_activo ? 'var(--success)' : 'var(--danger)';
+            const statusClass = alumno.esta_activo ? 'success' : 'danger';
+            const statusText = alumno.esta_activo ? 'Activo' : 'Inactivo';
             
             row.innerHTML = `
                 <td>
@@ -47,140 +82,136 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
                 </td>
-                <td>${alumno.curp}</td>
+                <td>
+                    <div style="font-family:monospace; font-size:12px;">
+                        <div>${alumno.curp}</div>
+                        <div style="color:var(--text-muted);">${alumno.nss || '-'}</div>
+                    </div>
+                </td>
                 <td><span class="badge badge-primary">${alumno.grado || '?'}° ${alumno.grupo || '?'}</span></td>
-                <td><span style="color:${statusColor}; font-weight:bold;">● ${alumno.esta_activo ? 'Activo' : 'Inactivo'}</span></td>
+                <td><span style="color:var(--${statusClass});font-weight:700;font-size:12px;">● ${statusText}</span></td>
                 <td style="text-align:right;">
-                    <button class="action-btn btn-view-profile" data-id="${alumno.id_perfil_alumno}">Ver Perfil</button>
+                    <button class="action-btn btn-view" data-id="${alumno.id_perfil_alumno}">Editar / Ver</button>
                 </td>
             `;
             tableBody.appendChild(row);
         });
 
-        document.querySelectorAll('.btn-view-profile').forEach(btn => {
+        document.querySelectorAll('.btn-view').forEach(btn => {
             btn.addEventListener('click', (e) => openDetail(e.target.dataset.id));
         });
     }
 
     function setupListeners() {
-        searchInput.addEventListener('input', filterData);
-        filterGrade.addEventListener('change', filterData);
+        if (searchInput) searchInput.addEventListener('input', filterData);
+        if (filterGrade) filterGrade.addEventListener('change', filterData);
 
-        document.getElementById('btn-new-student').addEventListener('click', () => {
-            window.location.href = '/alumnos/register/index.html';
-        });
+        if (btnCloseDetail) {
+            btnCloseDetail.addEventListener('click', () => {
+                detailView.classList.add('hidden');
+                listView.classList.remove('hidden');
+            });
+        }
 
-        document.getElementById('btn-close-detail').addEventListener('click', () => {
-            detailView.classList.add('hidden');
-            listView.classList.remove('hidden');
-        });
-
-        document.getElementById('student-photo').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (evt) => {
-                    document.getElementById('photo-preview').style.backgroundImage = `url('${evt.target.result}')`;
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
-        studentForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(studentForm);
-            const id = document.getElementById('student-id').value;
-            
-            try {
-                const res = await apiFetch(`/api/alumnos/${id}`, 'PUT', null); 
-                
-                const finalFormData = new FormData(studentForm);
-                const response = await fetch(`/api/alumnos/${id}`, {
-                    method: 'PUT',
-                    body: finalFormData
-                });
-                
-                if (response.ok) {
-                    alert('Alumno actualizado.');
-                    fetchAlumnos(); 
-                    detailView.classList.add('hidden');
-                    listView.classList.remove('hidden');
-                } else {
-                    alert('Error al actualizar.');
+        const photoInput = document.getElementById('student-photo');
+        const photoPreview = document.getElementById('photo-preview');
+        
+        if (photoPreview && photoInput) {
+            photoPreview.addEventListener('click', () => photoInput.click());
+            photoInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if(file) {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => photoPreview.style.backgroundImage = `url('${ev.target.result}')`;
+                    reader.readAsDataURL(file);
                 }
-            } catch (error) {
-                console.error(error);
-            }
-        });
+            });
+        }
 
-        document.getElementById('btn-soft-delete').addEventListener('click', async () => {
-            if (!confirm('¿Seguro que deseas desactivar a este alumno?')) return;
-            
-            const id = document.getElementById('student-id').value;
-            const formData = new FormData();
-            formData.append('esta_activo', 0);
-            
-x   
-            document.getElementById('student-active').value = '0';
-            studentForm.dispatchEvent(new Event('submit'));
-        });
+        if (studentForm) {
+            studentForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const id = document.getElementById('student-id').value;
+                const formData = new FormData(studentForm);
+                
+                try {
+                    const response = await apiFetch(`/api/alumnos/${id}`, 'PUT', formData);
+                    if (response.success) {
+                        alert('Alumno actualizado correctamente.');
+                        detailView.classList.add('hidden');
+                        listView.classList.remove('hidden');
+                        fetchAlumnos();
+                    }
+                } catch (error) {
+                    alert('Error al actualizar: ' + (error.message || 'Error desconocido'));
+                }
+            });
+        }
+
+        const btnDelete = document.getElementById('btn-soft-delete');
+        if (btnDelete) {
+            btnDelete.addEventListener('click', () => {
+                const isActive = document.getElementById('student-active').value == '1';
+                const action = isActive ? 'desactivar' : 'reactivar';
+                
+                if(confirm(`¿Deseas ${action} a este alumno?`)) {
+                    document.getElementById('student-active').value = isActive ? '0' : '1';
+                    studentForm.dispatchEvent(new Event('submit'));
+                }
+            });
+        }
     }
 
     function filterData() {
+        if (!searchInput || !filterGrade) return;
+        
         const term = searchInput.value.toLowerCase();
         const grade = filterGrade.value;
-        
+
         const filtered = allAlumnos.filter(a => {
-            const matchText = `${a.nombres} ${a.apellido_paterno} ${a.curp}`.toLowerCase().includes(term);
-            const matchGrade = grade === '' || (a.grado && a.grado.toString() === grade);
-            return matchText && matchGrade;
+            const textMatch = `${a.nombres} ${a.apellido_paterno} ${a.curp} ${a.correo_electronico}`.toLowerCase().includes(term);
+            const gradeMatch = grade === '' || (a.grado && a.grado.toString() === grade);
+            return textMatch && gradeMatch;
         });
         renderTable(filtered);
     }
 
     function openDetail(id) {
         const student = allAlumnos.find(a => a.id_perfil_alumno == id);
-        if (!student) return;
+        if(!student) return;
 
-        populateForm(student);
+        document.getElementById('student-id').value = student.id_perfil_alumno;
+        document.getElementById('student-active').value = student.esta_activo ? '1' : '0';
+        document.getElementById('student-image-url').value = student.imagen_url;
+
+        document.getElementById('d-nombres').value = student.nombres;
+        document.getElementById('d-paterno').value = student.apellido_paterno;
+        document.getElementById('d-materno').value = student.apellido_materno || '';
+        document.getElementById('d-curp').value = student.curp;
+        document.getElementById('d-nss').value = student.nss || '';
+        document.getElementById('d-grado').value = student.grado;
+        document.getElementById('d-grupo').value = student.grupo;
+        document.getElementById('d-sangre').value = student.tipo_sangre || '';
+        document.getElementById('d-email').value = student.correo_electronico;
+        document.getElementById('d-telefono').value = student.telefono || '';
+
+        const photo = student.imagen_url || '../assets/img/default-avatar.png';
+        document.getElementById('photo-preview').style.backgroundImage = `url('${photo}')`;
+
+        const btnDelete = document.getElementById('btn-soft-delete');
+        if (btnDelete) {
+            if(student.esta_activo) {
+                btnDelete.textContent = 'Desactivar Alumno';
+                btnDelete.className = 'btn btn-danger';
+            } else {
+                btnDelete.textContent = 'Reactivar Alumno';
+                btnDelete.className = 'btn btn-success';
+                btnDelete.style.backgroundColor = 'var(--success)';
+                btnDelete.style.color = 'white';
+            }
+        }
+
         listView.classList.add('hidden');
         detailView.classList.remove('hidden');
-    }
-
-    function populateForm(data) {
-        document.getElementById('student-id').value = data.id_perfil_alumno;
-        document.getElementById('d-nombres').value = data.nombres;
-        document.getElementById('d-paterno').value = data.apellido_paterno;
-        document.getElementById('d-materno').value = data.apellido_materno || '';
-        document.getElementById('d-curp').value = data.curp;
-        document.getElementById('d-grado').value = data.grado || '';
-        document.getElementById('d-grupo').value = data.grupo || '';
-        document.getElementById('d-sangre').value = data.tipo_sangre || '';
-        document.getElementById('d-email').value = data.correo_electronico;
-        document.getElementById('d-telefono').value = data.telefono || '';
-        document.getElementById('student-active').value = data.esta_activo ? '1' : '0';
-        document.getElementById('student-image-url').value = data.imagen_url;
-
-        const photoUrl = data.imagen_url || '../assets/img/default-avatar.png';
-        document.getElementById('photo-preview').style.backgroundImage = `url('${photoUrl}')`;
-
-        const deleteBtn = document.getElementById('btn-soft-delete');
-        if (data.esta_activo) {
-            deleteBtn.textContent = 'Desactivar Alumno';
-            deleteBtn.classList.remove('btn-success');
-            deleteBtn.classList.add('btn-danger');
-            deleteBtn.onclick = () => { 
-                document.getElementById('student-active').value = '0'; 
-                studentForm.requestSubmit(); 
-            };
-        } else {
-            deleteBtn.textContent = 'Reactivar Alumno';
-            deleteBtn.classList.remove('btn-danger');
-            deleteBtn.classList.add('btn-success'); 
-            deleteBtn.onclick = () => { 
-                document.getElementById('student-active').value = '1'; 
-                studentForm.requestSubmit(); 
-            };
-        }
     }
 });
