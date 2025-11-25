@@ -1,0 +1,6 @@
+correo_electronico,telefono,contrasena,nombres,apellido_paterno,apellido_materno,fecha_nacimiento,curp,boleta,nss,tipo_sangre,grado,grupo
+alumno1@cecyt9.mx,5511111111,pass123,Juan Carlos,Pérez,López,2009-05-15,PELJ090515HDFRRN01,2025090001,12345678901,O+,1,1IV1
+alumno2@cecyt9.mx,5522222222,pass123,María Fernanda,González,Ruiz,2009-08-20,GORM090820MDFRRN02,2025090002,12345678902,A+,1,1IV1
+alumno3@cecyt9.mx,5533333333,pass123,Luis Angel,Hernández,Díaz,2009-02-10,HEDL090210HDFRRN03,2025090003,12345678903,B-,1,1IV1
+alumno4@cecyt9.mx,5544444444,pass123,Sofía Valentina,Martínez,Sánchez,2009-11-05,MASS091105MDFRRN04,2025090004,12345678904,O-,1,1IV1
+alumno5@cecyt9.mx,5555555555,pass123,Diego Alejandro,Ramírez,Castro,2009-01-30,RACD090130HDFRRN05,2025090005,12345678905,AB+,1,1IV1
