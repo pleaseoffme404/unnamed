@@ -6,13 +6,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const tutorForm = document.getElementById('tutor-form');
     const btnCloseDetail = document.getElementById('btn-close-detail');
     
+    const editSearchInput = document.getElementById('edit-student-search');
+    const editResultsContainer = document.getElementById('edit-search-results');
+    const editSelectedContainer = document.getElementById('edit-selected-students');
+    let selectedStudents = []; 
+    let allStudentsCache = [];
+    
     let allTutores = []; 
 
     init();
 
     function init() {
         fetchTutores();
+        loadStudentsForSearch(); 
         setupListeners();
+        setupEditSearchListeners();
     }
 
     async function fetchTutores() {
@@ -21,12 +29,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.success) {
                 allTutores = response.data;
                 renderTable(allTutores);
-            } else {
-                if(tableBody) tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--danger);">Error cargando datos.</td></tr>`;
             }
-        } catch (error) {
-            console.error(error);
-        }
+        } catch (error) { console.error(error); }
+    }
+
+    async function loadStudentsForSearch() {
+        try {
+            const response = await apiFetch('/api/alumnos', 'GET');
+            if(response.success) allStudentsCache = response.data;
+        } catch (e) {}
     }
 
     function renderTable(data) {
@@ -42,10 +53,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const row = document.createElement('tr');
             const avatar = tutor.imagen_url || '../assets/img/default-avatar.png';
             const nombre = `${tutor.nombres} ${tutor.apellido_paterno}`;
-            
-            const isActive = tutor.esta_activo === 1 || tutor.esta_activo === true;
-            const statusText = isActive ? 'Activo' : 'Inactivo';
-            const statusColor = isActive ? 'var(--success)' : 'var(--danger)';
+            const statusClass = tutor.esta_activo ? 'success' : 'danger';
+            const statusText = tutor.esta_activo ? 'Activo' : 'Inactivo';
 
             row.innerHTML = `
                 <td>
@@ -63,12 +72,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span style="color:var(--text-muted);">${tutor.telefono || '-'}</span>
                     </div>
                 </td>
-                <td>
-                    <span class="badge badge-primary">${tutor.total_alumnos || 0} Alumnos</span>
-                </td>
-                <td>
-                    <span style="color:${statusColor}; font-weight:700; font-size:12px;">● ${statusText}</span>
-                </td>
+                <td><span class="badge badge-primary">${tutor.total_alumnos || 0} Alumnos</span></td>
+                <td><span style="color:var(--${statusClass});font-weight:700;font-size:12px;">● ${statusText}</span></td>
                 <td style="text-align:right;">
                     <button class="action-btn btn-view" data-id="${tutor.id_perfil_tutor}">Editar</button>
                 </td>
@@ -94,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const photoInput = document.getElementById('tutor-photo');
         const photoPreview = document.getElementById('photo-preview');
-        if(photoInput && photoPreview) {
+        if(photoInput) {
             photoPreview.addEventListener('click', () => photoInput.click());
             photoInput.addEventListener('change', (e) => {
                 const file = e.target.files[0];
@@ -112,6 +117,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const id = document.getElementById('tutor-id').value;
                 const formData = new FormData(tutorForm);
                 
+                selectedStudents.forEach(s => formData.append('alumnos', s.id));
+
                 try {
                     const response = await apiFetch(`/api/tutores/${id}`, 'PUT', formData);
                     if (response.success) {
@@ -139,11 +146,76 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function setupEditSearchListeners() {
+        if(!editSearchInput) return;
+
+        editSearchInput.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            if(term.length < 2) {
+                editResultsContainer.classList.remove('active');
+                return;
+            }
+            const filtered = allStudentsCache.filter(s => {
+                const alreadySelected = selectedStudents.some(sel => sel.id === s.id_perfil_alumno);
+                const matches = `${s.nombres} ${s.apellido_paterno} ${s.curp}`.toLowerCase().includes(term);
+                return matches && !alreadySelected;
+            });
+            renderSearchResults(filtered);
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!editSearchInput.contains(e.target) && !editResultsContainer.contains(e.target)) {
+                editResultsContainer.classList.remove('active');
+            }
+        });
+    }
+
+    function renderSearchResults(results) {
+        editResultsContainer.innerHTML = '';
+        if(results.length === 0) {
+            editResultsContainer.classList.remove('active');
+            return;
+        }
+        results.forEach(s => {
+            const div = document.createElement('div');
+            div.className = 'search-result-item';
+            div.textContent = `${s.nombres} ${s.apellido_paterno} (${s.curp})`;
+            div.addEventListener('click', () => {
+                addStudent(s);
+                editSearchInput.value = '';
+                editResultsContainer.classList.remove('active');
+            });
+            editResultsContainer.appendChild(div);
+        });
+        editResultsContainer.classList.add('active');
+    }
+
+    function addStudent(student) {
+        selectedStudents.push({ id: student.id_perfil_alumno, name: `${student.nombres} ${student.apellido_paterno}` });
+        renderSelectedStudents();
+    }
+
+    function removeStudent(id) {
+        selectedStudents = selectedStudents.filter(s => s.id !== id);
+        renderSelectedStudents();
+    }
+
+    function renderSelectedStudents() {
+        editSelectedContainer.innerHTML = '';
+        selectedStudents.forEach(s => {
+            const tag = document.createElement('div');
+            tag.className = 'student-tag';
+            tag.innerHTML = `${s.name} <span class="remove-tag" data-id="${s.id}">×</span>`;
+            tag.querySelector('.remove-tag').addEventListener('click', (e) => removeStudent(parseInt(e.target.dataset.id)));
+            editSelectedContainer.appendChild(tag);
+        });
+    }
+
     function filterData() {
         if(!searchInput) return;
         const term = searchInput.value.toLowerCase();
         const filtered = allTutores.filter(t => {
-            return `${t.nombres} ${t.apellido_paterno} ${t.correo_electronico} ${t.telefono}`.toLowerCase().includes(term);
+            return `${t.nombres} ${t.apellido_paterno} ${t.correo_electronico}`.toLowerCase().includes(term);
         });
         renderTable(filtered);
     }
@@ -178,26 +250,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const photo = data.imagen_url || '../assets/img/default-avatar.png';
         document.getElementById('photo-preview').style.backgroundImage = `url('${photo}')`;
 
-        const container = document.getElementById('linked-students-container');
-        if (data.alumnos_lista && data.alumnos_lista.length > 0) {
-            let html = '<ul>';
+        selectedStudents = []; 
+        if (data.alumnos_lista) {
             data.alumnos_lista.forEach(a => {
-                html += `<li>${a.nombres} ${a.apellido_paterno} (${a.curp})</li>`;
+                selectedStudents.push({ id: a.id_perfil_alumno, name: `${a.nombres} ${a.apellido_paterno}` });
             });
-            html += '</ul>';
-            container.innerHTML = html;
-        } else {
-            container.innerHTML = '<p style="font-style:italic;">Sin alumnos asignados.</p>';
         }
+        renderSelectedStudents();
 
         const btnDelete = document.getElementById('btn-soft-delete');
         if(btnDelete) {
-            if (data.esta_activo) {
+            const isActive = data.esta_activo === 1 || data.esta_activo === true;
+            if (isActive) {
                 btnDelete.textContent = 'Desactivar Cuenta';
                 btnDelete.className = 'btn btn-danger';
             } else {
                 btnDelete.textContent = 'Reactivar Cuenta';
-                btnDelete.className = 'btn btn-success'; 
+                btnDelete.className = 'btn btn-success';
                 btnDelete.style.backgroundColor = 'var(--success)';
                 btnDelete.style.color = 'white';
             }

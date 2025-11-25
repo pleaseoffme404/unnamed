@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS `perfil_admin` (
 CREATE TABLE IF NOT EXISTS `perfil_alumno` (
     `id_perfil_alumno` INT AUTO_INCREMENT PRIMARY KEY,
     `id_usuario_fk` INT NOT NULL UNIQUE,
+    boleta VARCHAR(10) NOT NULL UNIQUE,
     `nombres` VARCHAR(150) NOT NULL,
     `apellido_paterno` VARCHAR(100) NOT NULL,
     `apellido_materno` VARCHAR(100),

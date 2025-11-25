@@ -7,7 +7,8 @@ const { saveImage, deleteImage } = require('./utils.controller');
 const registerTutor = async (req, res) => {
     const { 
         nombres, apellido_paterno, apellido_materno, 
-        correo_electronico, telefono, contrasena, notificaciones 
+        correo_electronico, telefono, contrasena, notificaciones,
+        alumnos 
     } = req.body;
 
     let imageUrl = null;
@@ -18,9 +19,7 @@ const registerTutor = async (req, res) => {
 
     let connection;
     try {
-        if (req.file) {
-            imageUrl = await saveImage(req.file, 'tutores', `${nombres} ${apellido_paterno}`);
-        }
+        if (req.file) imageUrl = await saveImage(req.file, 'tutores', `${nombres} ${apellido_paterno}`);
 
         connection = await pool.getConnection();
         await connection.beginTransaction();
@@ -33,17 +32,31 @@ const registerTutor = async (req, res) => {
             [correo_electronico, hash, telefono]
         );
 
-        await connection.query(
+        const [tutorRes] = await connection.query(
             'INSERT INTO perfil_tutor (id_usuario_fk, nombres, apellido_paterno, apellido_materno, notificaciones, imagen_url) VALUES (?, ?, ?, ?, ?, ?)',
             [userRes.insertId, nombres, apellido_paterno, apellido_materno, notificaciones || 'correo', imageUrl]
         );
 
+        if (alumnos) {
+            const alumnosIds = Array.isArray(alumnos) ? alumnos : [alumnos];
+            
+            for (const alumnoId of alumnosIds) {
+                if(alumnoId) {
+                    await connection.query(
+                        'INSERT INTO alumnos_tutores (id_perfil_alumno_fk, id_perfil_tutor_fk, parentesco) VALUES (?, ?, ?)',
+                        [alumnoId, tutorRes.insertId, 'Tutor']
+                    );
+                }
+            }
+        }
+
         await connection.commit();
-        res.status(201).json({ success: true, message: 'Tutor registrado exitosamente.' });
+        res.status(201).json({ success: true, message: 'Tutor registrado.' });
 
     } catch (error) {
         if (connection) await connection.rollback();
         if (imageUrl) await deleteImage(imageUrl);
+        console.error(error);
         res.status(500).json({ success: false, message: error.code === 'ER_DUP_ENTRY' ? 'Correo o teléfono ya registrados.' : 'Error interno.' });
     } finally {
         if (connection) connection.release();
@@ -66,6 +79,7 @@ const getAllTutores = async (req, res) => {
         );
         res.status(200).json({ success: true, data: rows });
     } catch (error) {
+        console.error(error);
         res.status(500).json({ success: false, message: 'Error interno.' });
     } finally {
         if (connection) connection.release();
@@ -84,11 +98,10 @@ const getTutorById = async (req, res) => {
             WHERE t.id_perfil_tutor = ?`,
             [id]
         );
-        
         if (rows.length === 0) return res.status(404).json({ success: false });
         
         const [alumnos] = await connection.query(
-            `SELECT a.nombres, a.apellido_paterno, a.curp 
+            `SELECT a.id_perfil_alumno, a.nombres, a.apellido_paterno, a.curp 
              FROM perfil_alumno a
              JOIN alumnos_tutores rel ON a.id_perfil_alumno = rel.id_perfil_alumno_fk
              WHERE rel.id_perfil_tutor_fk = ?`, 
@@ -111,7 +124,8 @@ const updateTutor = async (req, res) => {
     const { 
         nombres, apellido_paterno, apellido_materno, 
         correo_electronico, telefono, contrasena, notificaciones, esta_activo, 
-        imagen_url_actual 
+        imagen_url_actual,
+        alumnos 
     } = req.body;
 
     let connection;
@@ -148,10 +162,25 @@ const updateTutor = async (req, res) => {
             await connection.query('UPDATE usuarios SET contrasena_hash=? WHERE id_usuario=?', [hash, id_usuario]);
         }
 
+        await connection.query('DELETE FROM alumnos_tutores WHERE id_perfil_tutor_fk = ?', [id]);
+
+        if (alumnos) {
+            const alumnosIds = Array.isArray(alumnos) ? alumnos : [alumnos];
+            for (const alumnoId of alumnosIds) {
+                if(alumnoId) {
+                    await connection.query(
+                        'INSERT INTO alumnos_tutores (id_perfil_alumno_fk, id_perfil_tutor_fk, parentesco) VALUES (?, ?, ?)',
+                        [alumnoId, id, 'Tutor']
+                    );
+                }
+            }
+        }
+
         await connection.commit();
-        res.status(200).json({ success: true, message: 'Actualizado correctamente.' });
+        res.status(200).json({ success: true, message: 'Actualizado.' });
     } catch (error) {
         if (connection) await connection.rollback();
+        console.error(error);
         res.status(500).json({ success: false, message: 'Error al actualizar.' });
     } finally {
         if (connection) connection.release();
@@ -178,9 +207,7 @@ const deleteTutor = async (req, res) => {
 };
 
 const registerTutoresMasivo = async (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ success: false, message: 'No se subió archivo.' });
-    }
+    if (!req.file) return res.status(400).json({ success: false, message: 'Falta archivo.' });
 
     const buffer = req.file.buffer;
     const stream = Readable.from(buffer.toString());
@@ -197,38 +224,63 @@ const registerTutoresMasivo = async (req, res) => {
                 let count = 0;
                 
                 for (const [index, tutor] of tutores.entries()) {
-                    const { correo_electronico, telefono, contrasena, nombres, apellido_paterno, apellido_materno, notificaciones } = tutor;
+                    const { 
+                        correo_electronico, telefono, contrasena, 
+                        nombres, apellido_paterno, apellido_materno, 
+                        boleta_alumno 
+                    } = tutor;
 
-                    if (!correo_electronico || !contrasena || !nombres || !apellido_paterno || !telefono) {
-                        processingErrors.push({ fila: index + 2, error: 'Faltan datos.' });
+                    if (!correo_electronico || !contrasena || !nombres || !apellido_paterno) {
+                        processingErrors.push({ fila: index + 2, error: 'Datos obligatorios faltantes.' });
                         continue;
                     }
 
                     try {
                         await connection.beginTransaction();
-                        const hash = await bcrypt.hash(contrasena, 10);
 
+                        let idAlumno = null;
+                        if (boleta_alumno) {
+                            const [alumnos] = await connection.query('SELECT id_perfil_alumno FROM perfil_alumno WHERE boleta = ?', [boleta_alumno]);
+                            if (alumnos.length > 0) {
+                                idAlumno = alumnos[0].id_perfil_alumno;
+                            } else {
+                               
+                            }
+                        }
+
+                        const hash = await bcrypt.hash(contrasena, 10);
                         const [userRes] = await connection.query(
                             'INSERT INTO usuarios (correo_electronico, contrasena_hash, telefono, rol) VALUES (?, ?, ?, "tutor")',
                             [correo_electronico, hash, telefono]
                         );
 
-                        await connection.query(
-                            'INSERT INTO perfil_tutor (id_usuario_fk, nombres, apellido_paterno, apellido_materno, notificaciones, imagen_url) VALUES (?, ?, ?, ?, ?, NULL)',
-                            [userRes.insertId, nombres, apellido_paterno, apellido_materno, notificaciones || 'correo']
+                        const [tutorRes] = await connection.query(
+                            'INSERT INTO perfil_tutor (id_usuario_fk, nombres, apellido_paterno, apellido_materno, notificaciones) VALUES (?, ?, ?, ?, "correo")',
+                            [userRes.insertId, nombres, apellido_paterno, apellido_materno]
                         );
+
+                        if (idAlumno) {
+                            await connection.query(
+                                'INSERT INTO alumnos_tutores (id_perfil_alumno_fk, id_perfil_tutor_fk, parentesco) VALUES (?, ?, ?)',
+                                [idAlumno, tutorRes.insertId, 'Tutor']
+                            );
+                        } else if (boleta_alumno) {
+                            processingErrors.push({ fila: index + 2, error: `Tutor registrado, pero boleta alumno '${boleta_alumno}' no encontrada.` });
+                        }
 
                         await connection.commit();
                         count++;
                     } catch (error) {
                         await connection.rollback();
-                        processingErrors.push({ fila: index + 2, error: error.code === 'ER_DUP_ENTRY' ? 'Duplicado' : 'Error BD' });
+                        let msg = 'Error BD';
+                        if (error.code === 'ER_DUP_ENTRY') msg = 'Correo o teléfono duplicado';
+                        processingErrors.push({ fila: index + 2, error: msg });
                     }
                 }
 
                 res.status(201).json({
                     success: true,
-                    message: `Registrados: ${count}. Errores: ${processingErrors.length}.`,
+                    message: `Procesado. Registrados: ${count}. Alertas/Errores: ${processingErrors.length}.`,
                     errores: processingErrors
                 });
 

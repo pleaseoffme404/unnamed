@@ -9,7 +9,6 @@ router.get('/:id', isAdmin, controller.getTutorById);
 router.post('/', isAdmin, uploadImage.single('imagen'), controller.registerTutor);
 router.put('/:id', isAdmin, uploadImage.single('imagen'), controller.updateTutor);
 router.delete('/:id', isAdmin, controller.deleteTutor);
-
 router.post('/register-masivo', isAdmin, uploadCsv.single('csvFile'), controller.registerTutoresMasivo);
 
 module.exports = router;

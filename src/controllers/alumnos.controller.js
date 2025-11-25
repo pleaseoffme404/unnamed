@@ -1,8 +1,8 @@
 const pool = require('../services/db.service');
+const { saveImage, deleteImage } = require('./utils.controller');
 const bcrypt = require('bcryptjs');
 const csv = require('csv-parser');
 const { Readable } = require('stream');
-const { saveImage, deleteImage } = require('./utils.controller');
 
 const getGrupos = async (req, res) => {
     let connection;
@@ -17,59 +17,6 @@ const getGrupos = async (req, res) => {
     }
 };
 
-const registerAlumno = async (req, res) => {
-    const { 
-        correo_electronico, telefono, contrasena,
-        nombres, apellido_paterno, apellido_materno, fecha_nacimiento,
-        curp, nss, tipo_sangre, grado, grupo
-    } = req.body;
-
-    let imageUrl = null;
-
-    if (!correo_electronico || !contrasena || !nombres || !apellido_paterno || !curp) {
-        return res.status(400).json({ success: false, message: 'Correo, contraseña, nombre, apellido y CURP son requeridos.' });
-    }
-
-    let connection;
-    try {
-        if (req.file) {
-            imageUrl = await saveImage(req.file, 'alumnos', `${nombres} ${apellido_paterno}`);
-        }
-
-        connection = await pool.getConnection();
-        await connection.beginTransaction();
-
-        const salt = await bcrypt.genSalt(10);
-        const contrasena_hash = await bcrypt.hash(contrasena, salt);
-
-        const [userResult] = await connection.query(
-            'INSERT INTO usuarios (correo_electronico, contrasena_hash, telefono, rol) VALUES (?, ?, ?, "alumno")',
-            [correo_electronico, contrasena_hash, telefono]
-        );
-
-        const newUserId = userResult.insertId;
-
-        await connection.query(
-            'INSERT INTO perfil_alumno (id_usuario_fk, nombres, apellido_paterno, apellido_materno, fecha_nacimiento, curp, nss, tipo_sangre, grado, grupo, imagen_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [newUserId, nombres, apellido_paterno, apellido_materno, fecha_nacimiento, curp, nss, tipo_sangre, grado, grupo, imageUrl]
-        );
-
-        await connection.commit();
-        res.status(201).json({ success: true, message: 'Alumno registrado exitosamente', userId: newUserId });
-
-    } catch (error) {
-        if (connection) await connection.rollback();
-        if (imageUrl) await deleteImage(imageUrl); 
-
-        if (error.code === 'ER_DUP_ENTRY') {
-            return res.status(409).json({ success: false, message: 'El correo electrónico, teléfono o CURP ya están registrados.' });
-        }
-        res.status(500).json({ success: false, message: 'Error interno del servidor.' });
-    } finally {
-        if (connection) connection.release();
-    }
-};
-
 const getAllAlumnos = async (req, res) => {
     let connection;
     try {
@@ -77,7 +24,7 @@ const getAllAlumnos = async (req, res) => {
         const [rows] = await connection.query(
             `SELECT 
                 p.id_perfil_alumno, p.nombres, p.apellido_paterno, p.apellido_materno,
-                p.curp, p.grado, p.grupo, p.imagen_url, 
+                p.curp, p.boleta, p.grado, p.grupo, p.imagen_url, 
                 u.esta_activo, 
                 u.id_usuario, u.correo_electronico, u.telefono
             FROM perfil_alumno p
@@ -86,8 +33,7 @@ const getAllAlumnos = async (req, res) => {
         );
         res.status(200).json({ success: true, data: rows });
     } catch (error) {
-        console.error(error); 
-        res.status(500).json({ success: false, message: 'Error interno del servidor.' });
+        res.status(500).json({ success: false, message: 'Error interno.' });
     } finally {
         if (connection) connection.release();
     }
@@ -99,20 +45,60 @@ const getAlumnoById = async (req, res) => {
     try {
         connection = await pool.getConnection();
         const [rows] = await connection.query(
-            `SELECT 
-                p.*,
-                u.correo_electronico, u.telefono, u.esta_activo
+            `SELECT p.*, u.correo_electronico, u.telefono, u.esta_activo
             FROM perfil_alumno p
             JOIN usuarios u ON p.id_usuario_fk = u.id_usuario
             WHERE p.id_perfil_alumno = ?`,
             [id]
         );
-        if (rows.length === 0) {
-            return res.status(404).json({ success: false, message: 'Alumno no encontrado.' });
-        }
+        if (rows.length === 0) return res.status(404).json({ success: false });
         res.status(200).json({ success: true, data: rows[0] });
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Error interno del servidor.' });
+        res.status(500).json({ success: false });
+    } finally {
+        if (connection) connection.release();
+    }
+};
+
+const registerAlumno = async (req, res) => {
+    const { 
+        correo_electronico, telefono, contrasena, 
+        nombres, apellido_paterno, apellido_materno, fecha_nacimiento, 
+        curp, boleta, nss, tipo_sangre, grado, grupo 
+    } = req.body;
+    
+    let imageUrl = null;
+
+    if (!correo_electronico || !contrasena || !nombres || !apellido_paterno || !curp || !boleta) {
+        return res.status(400).json({ success: false, message: 'Faltan datos requeridos.' });
+    }
+
+    let connection;
+    try {
+        if (req.file) imageUrl = await saveImage(req.file, 'alumnos', `${nombres} ${apellido_paterno}`);
+        
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash(contrasena, salt);
+
+        const [userRes] = await connection.query(
+            'INSERT INTO usuarios (correo_electronico, contrasena_hash, telefono, rol) VALUES (?, ?, ?, "alumno")',
+            [correo_electronico, hash, telefono]
+        );
+
+        await connection.query(
+            'INSERT INTO perfil_alumno (id_usuario_fk, nombres, apellido_paterno, apellido_materno, fecha_nacimiento, curp, boleta, nss, tipo_sangre, grado, grupo, imagen_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [userRes.insertId, nombres, apellido_paterno, apellido_materno, fecha_nacimiento, curp, boleta, nss, tipo_sangre, grado, grupo, imageUrl]
+        );
+
+        await connection.commit();
+        res.status(201).json({ success: true, message: 'Alumno registrado.' });
+    } catch (error) {
+        if (connection) await connection.rollback();
+        if (imageUrl) await deleteImage(imageUrl);
+        res.status(500).json({ success: false, message: error.code === 'ER_DUP_ENTRY' ? 'Datos duplicados.' : 'Error interno.' });
     } finally {
         if (connection) connection.release();
     }
@@ -121,71 +107,51 @@ const getAlumnoById = async (req, res) => {
 const updateAlumno = async (req, res) => {
     const { id } = req.params;
     const { 
-        correo_electronico, telefono, esta_activo,
-        nombres, apellido_paterno, apellido_materno, fecha_nacimiento,
-        curp, nss, tipo_sangre, grado, grupo, contrasena,
-        imagen_url_actual
+        correo_electronico, telefono, esta_activo, 
+        nombres, apellido_paterno, apellido_materno, fecha_nacimiento, 
+        curp, boleta, nss, tipo_sangre, grado, grupo, contrasena, 
+        imagen_url_actual 
     } = req.body;
 
     let connection;
-    let newImageUrl = imagen_url_actual || null; 
+    let newImageUrl = imagen_url_actual || null;
 
     try {
         connection = await pool.getConnection();
         await connection.beginTransaction();
 
-        const [perfilRows] = await connection.query('SELECT id_usuario_fk FROM perfil_alumno WHERE id_perfil_alumno = ?', [id]);
-        if (perfilRows.length === 0) {
+        const [rows] = await connection.query('SELECT id_usuario_fk FROM perfil_alumno WHERE id_perfil_alumno = ?', [id]);
+        if (rows.length === 0) {
             await connection.rollback();
-            return res.status(404).json({ success: false, message: 'Alumno no encontrado.' });
+            return res.status(404).json({ success: false });
         }
-        const id_usuario = perfilRows[0].id_usuario_fk;
+        const id_usuario = rows[0].id_usuario_fk;
 
         if (req.file) {
             newImageUrl = await saveImage(req.file, 'alumnos', `${nombres} ${apellido_paterno}`);
-            if (imagen_url_actual) {
-                await deleteImage(imagen_url_actual);
-            }
-        } else if (imagen_url_actual === 'null' || imagen_url_actual === null) {
-            await deleteImage(imagen_url_actual);
-            newImageUrl = null;
+            if (imagen_url_actual) await deleteImage(imagen_url_actual);
         }
 
         await connection.query(
-            `UPDATE perfil_alumno SET 
-                nombres = ?, apellido_paterno = ?, apellido_materno = ?, fecha_nacimiento = ?,
-                curp = ?, nss = ?, tipo_sangre = ?, grado = ?, grupo = ?, imagen_url = ?
-            WHERE id_perfil_alumno = ?`,
-            [nombres, apellido_paterno, apellido_materno, fecha_nacimiento, curp, nss, tipo_sangre, grado, grupo, newImageUrl, id]
+            `UPDATE perfil_alumno SET nombres=?, apellido_paterno=?, apellido_materno=?, fecha_nacimiento=?, curp=?, boleta=?, nss=?, tipo_sangre=?, grado=?, grupo=?, imagen_url=? WHERE id_perfil_alumno=?`,
+            [nombres, apellido_paterno, apellido_materno, fecha_nacimiento, curp, boleta, nss, tipo_sangre, grado, grupo, newImageUrl, id]
         );
 
         await connection.query(
-            `UPDATE usuarios SET 
-                correo_electronico = ?, telefono = ?, esta_activo = ?
-            WHERE id_usuario = ?`,
+            `UPDATE usuarios SET correo_electronico=?, telefono=?, esta_activo=? WHERE id_usuario=?`,
             [correo_electronico, telefono, esta_activo, id_usuario]
         );
 
-        if (contrasena && contrasena.trim() !== '') {
-            const salt = await bcrypt.genSalt(10);
-            const contrasena_hash = await bcrypt.hash(contrasena, salt);
-            await connection.query(
-                'UPDATE usuarios SET contrasena_hash = ? WHERE id_usuario = ?',
-                [contrasena_hash, id_usuario]
-            );
+        if (contrasena && contrasena.trim()) {
+            const hash = await bcrypt.hash(contrasena, 10);
+            await connection.query('UPDATE usuarios SET contrasena_hash=? WHERE id_usuario=?', [hash, id_usuario]);
         }
 
         await connection.commit();
-        res.status(200).json({ success: true, message: 'Alumno actualizado exitosamente.', imagen_url: newImageUrl });
-
+        res.status(200).json({ success: true, message: 'Actualizado correctamente.' });
     } catch (error) {
         if (connection) await connection.rollback();
-        if (req.file) await deleteImage(newImageUrl); 
-
-        if (error.code === 'ER_DUP_ENTRY') {
-            return res.status(409).json({ success: false, message: 'El correo electrónico, teléfono o CURP ya están registrados por otro usuario.' });
-        }
-        res.status(500).json({ success: false, message: 'Error interno del servidor.' });
+        res.status(500).json({ success: false, message: 'Error al actualizar.' });
     } finally {
         if (connection) connection.release();
     }
@@ -196,34 +162,22 @@ const deleteAlumno = async (req, res) => {
     let connection;
     try {
         connection = await pool.getConnection();
+        const [rows] = await connection.query('SELECT id_usuario_fk, imagen_url FROM perfil_alumno WHERE id_perfil_alumno = ?', [id]);
+        if (rows.length === 0) return res.status(404).json({ success: false });
         
-        const [perfilRows] = await connection.query('SELECT id_usuario_fk, imagen_url FROM perfil_alumno WHERE id_perfil_alumno = ?', [id]);
-        if (perfilRows.length === 0) {
-            return res.status(404).json({ success: false, message: 'Alumno no encontrado.' });
-        }
+        await connection.query('DELETE FROM usuarios WHERE id_usuario = ?', [rows[0].id_usuario_fk]);
+        if (rows[0].imagen_url) await deleteImage(rows[0].imagen_url);
         
-        const id_usuario = perfilRows[0].id_usuario_fk;
-        const imageUrl = perfilRows[0].imagen_url;
-
-        await connection.query('DELETE FROM usuarios WHERE id_usuario = ?', [id_usuario]);
-        
-        if (imageUrl) {
-            await deleteImage(imageUrl);
-        }
-        
-        res.status(200).json({ success: true, message: 'Alumno eliminado exitosamente (eliminación en cascada).' });
-
+        res.status(200).json({ success: true, message: 'Eliminado.' });
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Error interno del servidor.' });
+        res.status(500).json({ success: false });
     } finally {
         if (connection) connection.release();
     }
 };
 
 const registerAlumnosMasivo = async (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ success: false, message: 'No se subió ningún archivo CSV.' });
-    }
+    if (!req.file) return res.status(400).json({ success: false, message: 'Falta archivo.' });
 
     const buffer = req.file.buffer;
     const stream = Readable.from(buffer.toString());
@@ -232,9 +186,7 @@ const registerAlumnosMasivo = async (req, res) => {
 
     stream
         .pipe(csv())
-        .on('data', (row) => {
-            alumnos.push(row);
-        })
+        .on('data', (row) => alumnos.push(row))
         .on('end', async () => {
             let connection;
             try {
@@ -245,52 +197,47 @@ const registerAlumnosMasivo = async (req, res) => {
                     const { 
                         correo_electronico, telefono, contrasena,
                         nombres, apellido_paterno, apellido_materno, fecha_nacimiento,
-                        curp, nss, tipo_sangre, grado, grupo
+                        curp, boleta, nss, tipo_sangre, grado, grupo
                     } = alumno;
 
-                    if (!correo_electronico || !contrasena || !nombres || !apellido_paterno || !curp) {
-                        processingErrors.push({ fila: index + 2, error: 'Campos requeridos faltantes.' });
+                    if (!correo_electronico || !contrasena || !nombres || !apellido_paterno || !curp || !boleta) {
+                        processingErrors.push({ fila: index + 2, error: 'Faltan campos obligatorios.' });
                         continue;
                     }
 
                     try {
                         await connection.beginTransaction();
-
                         const salt = await bcrypt.genSalt(10);
-                        const contrasena_hash = await bcrypt.hash(contrasena, salt);
+                        const hash = await bcrypt.hash(contrasena, salt);
 
-                        const [userResult] = await connection.query(
+                        const [userRes] = await connection.query(
                             'INSERT INTO usuarios (correo_electronico, contrasena_hash, telefono, rol) VALUES (?, ?, ?, "alumno")',
-                            [correo_electronico, contrasena_hash, telefono]
+                            [correo_electronico, hash, telefono]
                         );
 
-                        const newUserId = userResult.insertId;
-
                         await connection.query(
-                            'INSERT INTO perfil_alumno (id_usuario_fk, nombres, apellido_paterno, apellido_materno, fecha_nacimiento, curp, nss, tipo_sangre, grado, grupo, imagen_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)',
-                            [newUserId, nombres, apellido_paterno, apellido_materno, fecha_nacimiento || null, curp, nss || null, tipo_sangre || null, grado || null, grupo || null]
+                            'INSERT INTO perfil_alumno (id_usuario_fk, nombres, apellido_paterno, apellido_materno, fecha_nacimiento, curp, boleta, nss, tipo_sangre, grado, grupo, imagen_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)',
+                            [userRes.insertId, nombres, apellido_paterno, apellido_materno, fecha_nacimiento || null, curp, boleta, nss || null, tipo_sangre || null, grado || null, grupo || null]
                         );
 
                         await connection.commit();
                         count++;
                     } catch (error) {
                         await connection.rollback();
-                        let errorMsg = 'Error en la base de datos.';
-                        if (error.code === 'ER_DUP_ENTRY') {
-                            errorMsg = 'El correo, teléfono o CURP ya existen.';
-                        }
-                        processingErrors.push({ fila: index + 2, data: alumno, error: errorMsg });
+                        let msg = 'Error BD';
+                        if (error.code === 'ER_DUP_ENTRY') msg = 'Datos duplicados (Boleta/CURP/Email)';
+                        processingErrors.push({ fila: index + 2, data: alumno, error: msg });
                     }
                 }
 
                 res.status(201).json({
                     success: true,
-                    message: `Proceso completado. ${count} alumnos registrados. ${processingErrors.length} errores.`,
+                    message: `Procesado. Registrados: ${count}. Errores: ${processingErrors.length}.`,
                     errores: processingErrors
                 });
 
             } catch (error) {
-                res.status(500).json({ success: false, message: 'Error interno del servidor durante la carga masiva.' });
+                res.status(500).json({ success: false, message: 'Error en carga masiva.' });
             } finally {
                 if (connection) connection.release();
             }
@@ -298,11 +245,11 @@ const registerAlumnosMasivo = async (req, res) => {
 };
 
 module.exports = {
-    registerAlumno,
+    getGrupos,
     getAllAlumnos,
     getAlumnoById,
+    registerAlumno,
     updateAlumno,
     deleteAlumno,
-    registerAlumnosMasivo,
-    getGrupos
+    registerAlumnosMasivo
 };

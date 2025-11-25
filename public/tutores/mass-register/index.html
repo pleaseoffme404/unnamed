@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carga Masiva Tutores - Unnamed</title>
+    
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/header.css">
+    <link rel="stylesheet" href="../../assets/css/tutores.css">
+    <link rel="stylesheet" href="../../assets/css/alumnos.css"> 
+</head>
+<body>
+
+    <header class="main-header"></header>
+
+    <main class="page-content">
+        <div class="register-card" style="max-width: 650px;">
+            <div class="register-header">
+                <h2 class="page-title">Carga Masiva de Tutores</h2>
+                <a href="/tutores/index.html" class="btn btn-secondary">Volver</a>
+            </div>
+
+            <div style="background-color: var(--bg-input); padding: 15px; border-radius: 6px; margin-bottom: 20px; font-size: 13px; color: var(--text-secondary);">
+                <strong>Instrucciones:</strong>
+                <p>Sube un CSV con estas columnas (el orden importa):</p>
+                <code style="display:block; margin: 8px 0; font-family: monospace; background: var(--bg-panel); padding: 8px; border-radius: 4px;">
+                    correo_electronico, telefono, contrasena, nombres, apellido_paterno, apellido_materno, boleta_alumno
+                </code>
+                <p><em>Nota: 'boleta_alumno' vinculará automáticamente al tutor con el alumno existente.</em></p>
+            </div>
+
+            <form id="mass-tutor-form">
+                <div class="upload-area" id="upload-area">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" style="margin-bottom: 10px;">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    <p style="margin-bottom: 10px;">Arrastra tu archivo CSV aquí</p>
+                    <label for="csvFile" class="btn btn-secondary">Seleccionar Archivo</label>
+                    <input type="file" id="csvFile" name="csvFile" accept=".csv" style="display: none;">
+                    <p id="file-name" style="margin-top: 10px; font-weight: 600; color: var(--accent-primary);"></p>
+                </div>
+
+                <div class="form-actions-footer">
+                    <div id="form-feedback" class="feedback-message" style="width: 100%; text-align: left;"></div>
+                    <button type="submit" class="btn btn-primary" id="btn-upload" disabled>Procesar Archivo</button>
+                </div>
+            </form>
+
+            <div id="error-log" style="margin-top: 20px; display: none;">
+                <h4 style="color: var(--danger); font-size: 14px; margin-bottom: 10px;">Reporte:</h4>
+                <div class="log-container" id="log-content"></div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../../assets/js/api.js"></script>
+    <script src="../../assets/js/header.js"></script>
+    <script src="../../assets/js/tutores-mass-register.js"></script>
+
+</body>
+</html>
