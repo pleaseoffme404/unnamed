@@ -28,11 +28,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const grupos = response.data;
                 const uniqueGrados = [...new Set(grupos.map(g => g.grado))].sort();
                 
-                filterGrade.innerHTML = '<option value="">Todos los Grados</option>';
+                filterGrade.innerHTML = '<option value="">Todos los Semestres</option>';
                 uniqueGrados.forEach(grado => {
                     const option = document.createElement('option');
                     option.value = grado;
-                    option.textContent = `${grado}° Grado`;
+                    option.textContent = `${grado}° Semestre`;
                     filterGrade.appendChild(option);
                 });
             }

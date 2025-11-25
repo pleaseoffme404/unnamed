@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('mass-register-form');
+    const form = document.getElementById('mass-tutor-form');
     const fileInput = document.getElementById('csvFile');
     const uploadArea = document.getElementById('upload-area');
     const fileNameDisplay = document.getElementById('file-name');
@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
             fileNameDisplay.innerHTML = `Archivo listo: <span style="color:var(--accent-primary);">${file.name}</span>`;
             
             submitBtn.disabled = false;
-            submitBtn.classList.remove('btn-secondary'); 
+            submitBtn.classList.remove('btn-secondary');
             submitBtn.classList.add('btn-primary');
         }
     }
@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const formData = new FormData(form);
 
             try {
-                const response = await apiFetch('/api/alumnos/register-masivo', 'POST', formData);
+                const response = await apiFetch('/api/tutores/register-masivo', 'POST', formData);
                 
                 feedback.style.display = 'block';
                 
@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 feedback.style.display = 'block';
                 feedback.textContent = error.message || 'Error al procesar el archivo.';
             } finally {
-                if(fileInput.files.length > 0) submitBtn.disabled = false; 
+                if(fileInput.files.length > 0) submitBtn.disabled = false;
                 if(submitBtn.disabled) submitBtn.textContent = 'Procesar Archivo';
             }
         });

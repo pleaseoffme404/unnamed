@@ -9,16 +9,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const editSearchInput = document.getElementById('edit-student-search');
     const editResultsContainer = document.getElementById('edit-search-results');
     const editSelectedContainer = document.getElementById('edit-selected-students');
+    
     let selectedStudents = []; 
     let allStudentsCache = [];
-    
     let allTutores = []; 
 
     init();
 
     function init() {
         fetchTutores();
-        loadStudentsForSearch(); 
+        loadStudentsForSearch();
         setupListeners();
         setupEditSearchListeners();
     }
@@ -29,8 +29,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.success) {
                 allTutores = response.data;
                 renderTable(allTutores);
+            } else {
+                if(tableBody) tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--danger);">Error cargando datos.</td></tr>`;
             }
-        } catch (error) { console.error(error); }
+        } catch (error) {
+            console.error(error);
+        }
     }
 
     async function loadStudentsForSearch() {
@@ -53,8 +57,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const row = document.createElement('tr');
             const avatar = tutor.imagen_url || '../assets/img/default-avatar.png';
             const nombre = `${tutor.nombres} ${tutor.apellido_paterno}`;
-            const statusClass = tutor.esta_activo ? 'success' : 'danger';
-            const statusText = tutor.esta_activo ? 'Activo' : 'Inactivo';
+            
+            const isActive = tutor.esta_activo === 1 || tutor.esta_activo === true;
+            const statusText = isActive ? 'Activo' : 'Inactivo';
+            const statusColor = isActive ? 'var(--success)' : 'var(--danger)';
 
             row.innerHTML = `
                 <td>
@@ -73,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </td>
                 <td><span class="badge badge-primary">${tutor.total_alumnos || 0} Alumnos</span></td>
-                <td><span style="color:var(--${statusClass});font-weight:700;font-size:12px;">● ${statusText}</span></td>
+                <td><span style="color:${statusColor}; font-weight:700; font-size:12px;">● ${statusText}</span></td>
                 <td style="text-align:right;">
                     <button class="action-btn btn-view" data-id="${tutor.id_perfil_tutor}">Editar</button>
                 </td>
@@ -99,7 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const photoInput = document.getElementById('tutor-photo');
         const photoPreview = document.getElementById('photo-preview');
-        if(photoInput) {
+        if(photoInput && photoPreview) {
             photoPreview.addEventListener('click', () => photoInput.click());
             photoInput.addEventListener('change', (e) => {
                 const file = e.target.files[0];
@@ -147,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function setupEditSearchListeners() {
-        if(!editSearchInput) return;
+        if(!editSearchInput || !editResultsContainer) return;
 
         editSearchInput.addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase();
@@ -171,6 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderSearchResults(results) {
+        if(!editResultsContainer) return;
         editResultsContainer.innerHTML = '';
         if(results.length === 0) {
             editResultsContainer.classList.remove('active');
@@ -201,6 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderSelectedStudents() {
+        if(!editSelectedContainer) return; 
         editSelectedContainer.innerHTML = '';
         selectedStudents.forEach(s => {
             const tag = document.createElement('div');
@@ -215,7 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if(!searchInput) return;
         const term = searchInput.value.toLowerCase();
         const filtered = allTutores.filter(t => {
-            return `${t.nombres} ${t.apellido_paterno} ${t.correo_electronico}`.toLowerCase().includes(term);
+            return `${t.nombres} ${t.apellido_paterno} ${t.correo_electronico} ${t.telefono}`.toLowerCase().includes(term);
         });
         renderTable(filtered);
     }
