@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     
     const currentPath = window.location.pathname;
-    const isLoginPage = currentPath === '/' || (currentPath.includes('index.html') && !currentPath.includes('/dashboard') && !currentPath.includes('/alumnos') && !currentPath.includes('/tutores') && !currentPath.includes('/historial'));
+    const isLoginPage = currentPath === '/' || (currentPath.includes('index.html') && !currentPath.includes('/dashboard') && !currentPath.includes('/alumnos') && !currentPath.includes('/tutores') && !currentPath.includes('/historial') &&! currentPath.includes('/announcements'));
 
     if (isLoginPage) return;
 

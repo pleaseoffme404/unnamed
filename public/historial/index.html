@@ -3,12 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Historial Accesos - Unnamed</title>
+    <title>Historial - Unnamed Admin</title>
     
     <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="stylesheet" href="../assets/css/header.css">
     <link rel="stylesheet" href="../assets/css/table-view.css">
-    <link rel="stylesheet" href="../assets/css/historial.css">
+    <style>
+        .status-dot { font-weight: bold; font-size: 12px; }
+        .in-campus { color: var(--success); }
+        .out-campus { color: var(--text-muted); }
+    </style>
 </head>
 <body>
 
@@ -17,20 +21,11 @@
     <main class="page-content">
         
         <div class="page-header">
-            <h2 class="page-title">Historial de Entradas y Salidas</h2>
-        </div>
-
-        <div class="simulation-container">
-            <div class="sim-search-box">
-                <label>Simular Acceso (Alumno)</label>
-                <input type="text" id="sim-search-input" placeholder="Buscar por Nombre o Boleta..." autocomplete="off">
-                <input type="hidden" id="sim-alumno-id">
-                <div id="sim-search-results" class="search-results-dropdown"></div>
-            </div>
-            <div class="sim-actions">
-                <button id="btn-sim-entrada" class="btn btn-primary" disabled>Entrada</button>
-                <button id="btn-sim-salida" class="btn btn-danger" disabled>Salida</button>
-            </div>
+            <h2 class="page-title">Historial de Accesos</h2>
+            
+            <a href="simulador.html" class="btn btn-primary" style="background-color: var(--warning); border-color: var(--warning); color: #000;">
+                ⚡ Simulador (Dev Mode)
+            </a>
         </div>
 
         <div class="table-wrapper">
@@ -38,7 +33,7 @@
                 <thead>
                     <tr>
                         <th>Alumno</th>
-                        <th>Grupo</th>
+                        <th>Boleta</th>
                         <th>Entrada</th>
                         <th>Salida</th>
                         <th>Método</th>
@@ -56,7 +51,47 @@
 
     <script src="../assets/js/api.js"></script>
     <script src="../assets/js/header.js"></script>
-    <script src="../assets/js/historial-manager.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const tbody = document.getElementById('historial-tbody');
+            try {
+                const response = await apiFetch('/api/asistencia', 'GET');
+                if(response.success) {
+                    tbody.innerHTML = '';
+                    if(response.data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">Sin registros.</td></tr>';
+                        return;
+                    }
+                    response.data.forEach(h => {
+                        const entrada = new Date(h.fecha_hora_entrada).toLocaleString();
+                        const salida = h.fecha_hora_salida ? new Date(h.fecha_hora_salida).toLocaleString() : '--';
+                        const status = h.fecha_hora_salida ? '<span class="status-dot out-campus">● Completado</span>' : '<span class="status-dot in-campus">● En Campus</span>';
+                        
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>
+                                <div class="user-cell">
+                                    <img src="${h.imagen_url || '../assets/img/default-avatar.png'}" class="user-avatar">
+                                    <div class="user-info">
+                                        <span class="user-name">${h.nombres} ${h.apellido_paterno}</span>
+                                        <span class="user-meta">${h.grupo || ''}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td style="font-family:monospace;">${h.boleta}</td>
+                            <td>${entrada}</td>
+                            <td>${salida}</td>
+                            <td>${h.metodo_entrada === 'manual' ? 'Manual' : 'QR App'} <br> ${status}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            } catch(e) {
+                console.error(e);
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Error de conexión.</td></tr>';
+            }
+        });
+    </script>
 
 </body>
 </html>

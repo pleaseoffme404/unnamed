@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Accesos - Unnamed</title>
+    
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/header.css">
+    <link rel="stylesheet" href="../assets/css/table-view.css">
+    
+    <style>
+        .sim-card {
+            max-width: 600px;
+            margin: 40px auto;
+            background: var(--bg-panel);
+            padding: 30px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+        .student-result {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-app);
+            display: none;
+            align-items: center;
+            gap: 15px;
+            text-align: left;
+        }
+        .student-result.active { display: flex; }
+        .sim-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .sim-actions button { flex: 1; justify-content: center; height: 50px; font-size: 16px; }
+        .search-container { position: relative; text-align: left; }
+        .dropdown {
+            position: absolute; width: 100%; background: var(--bg-panel);
+            border: 1px solid var(--border-color); z-index: 10; max-height: 200px; overflow-y: auto;
+            display: none;
+        }
+        .dropdown.show { display: block; }
+        .dropdown-item { padding: 10px; cursor: pointer; border-bottom: 1px solid var(--bg-input); }
+        .dropdown-item:hover { background: var(--bg-input); }
+    </style>
+</head>
+<body>
+
+    <header class="main-header"></header>
+
+    <main class="page-content">
+        <div class="sim-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin: 0;">Simulador de Acceso</h2>
+                <a href="index.html" class="btn btn-secondary">Volver al Historial</a>
+            </div>
+
+            <div class="search-container">
+                <label style="font-size: 12px; font-weight: bold; color: var(--text-secondary);">BUSCAR ALUMNO (NOMBRE O BOLETA)</label>
+                <input type="text" id="search-input" placeholder="Escribe para buscar..." autocomplete="off">
+                <div id="search-dropdown" class="dropdown"></div>
+            </div>
+
+            <div id="selected-student" class="student-result">
+                <img id="s-avatar" src="" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;">
+                <div>
+                    <div id="s-name" style="font-weight: bold; font-size: 16px;"></div>
+                    <div id="s-boleta" style="font-size: 14px; color: var(--text-secondary);"></div>
+                </div>
+            </div>
+
+            <div class="sim-actions">
+                <button id="btn-entrada" class="btn btn-success" disabled>Registrar Entrada</button>
+                <button id="btn-salida" class="btn btn-danger" disabled>Registrar Salida</button>
+            </div>
+
+            <div id="feedback" style="margin-top: 20px; font-weight: bold;"></div>
+        </div>
+    </main>
+
+    <script src="../assets/js/api.js"></script>
+    <script src="../assets/js/header.js"></script>
+    <script src="../assets/js/historial-simulador.js"></script>
+
+</body>
+</html>
