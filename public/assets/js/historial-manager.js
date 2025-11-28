@@ -1,12 +1,15 @@
 document.addEventListener('DOMContentLoaded', () => {
     const tableBody = document.getElementById('historial-tbody');
-    const searchInput = document.getElementById('sim-search-input');
-    const searchResults = document.getElementById('sim-search-results');
+    const searchInput = document.getElementById('table-search-input');
+    
+    const simSearchInput = document.getElementById('sim-search-input');
+    const simSearchResults = document.getElementById('sim-search-results');
     const selectedIdInput = document.getElementById('sim-alumno-id');
     const btnEntrada = document.getElementById('btn-sim-entrada');
     const btnSalida = document.getElementById('btn-sim-salida');
 
     let allStudentsCache = [];
+    let historyData = [];
 
     init();
 
@@ -29,7 +32,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await apiFetch('/api/asistencia', 'GET');
             if (response.success) {
-                renderTable(response.data);
+                historyData = response.data;
+                renderTable(historyData);
             }
         } catch (error) {
             console.error(error);
@@ -41,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
         tableBody.innerHTML = '';
 
         if (data.length === 0) {
-            tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">No hay registros recientes.</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">No hay registros recientes.</td></tr>`;
             return;
         }
 
@@ -50,12 +54,24 @@ document.addEventListener('DOMContentLoaded', () => {
             const avatar = item.imagen_url || '../assets/img/default-avatar.png';
             const nombre = `${item.nombres} ${item.apellido_paterno}`;
             
-            const fechaEntrada = new Date(item.fecha_hora_entrada).toLocaleString('es-MX', { hour12: true });
-            const fechaSalida = item.fecha_hora_salida ? new Date(item.fecha_hora_salida).toLocaleString('es-MX', { hour12: true }) : '--';
+            const entradaDate = new Date(item.fecha_hora_entrada);
+            const entradaStr = entradaDate.toLocaleString('es-MX', { hour12: true });
+            const salidaStr = item.fecha_hora_salida ? new Date(item.fecha_hora_salida).toLocaleString('es-MX', { hour12: true }) : '--';
             
-            const statusBadge = item.fecha_hora_salida 
-                ? `<span class="status-badge status-out">Completado</span>` 
-                : `<span class="status-badge status-in">En Campus</span>`;
+            let statusBadge = '';
+            let statusText = '';
+            
+            if (item.estatus === 'retardo') {
+                statusText = 'Retardo';
+                statusBadge = 'status-late';
+            } else {
+                statusText = 'A Tiempo';
+                statusBadge = 'status-ontime';
+            }
+
+            const estadoActual = item.fecha_hora_salida ? 
+                '<span style="color:var(--text-muted); font-size:11px;">● Salida Registrada</span>' : 
+                '<span style="color:var(--success); font-weight:bold; font-size:11px;">● En Campus</span>';
 
             row.innerHTML = `
                 <td>
@@ -68,9 +84,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </td>
                 <td><span class="badge badge-primary">${item.grupo || '?'}</span></td>
-                <td class="time-cell">${fechaEntrada}</td>
-                <td class="time-cell">${fechaSalida}</td>
-                <td>${item.metodo_entrada === 'manual' ? 'Manual (Sim)' : 'QR App'}</td>
+                <td class="time-cell">${entradaStr}</td>
+                <td class="time-cell">${salidaStr}</td>
+                <td>
+                    <span class="status-badge ${statusBadge}">${statusText}</span>
+                    <div style="margin-top:4px;">${estadoActual}</div>
+                </td>
+                <td>${item.metodo_entrada === 'manual' ? 'Manual' : 'QR App'}</td>
             `;
             tableBody.appendChild(row);
         });
@@ -80,8 +100,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if (searchInput) {
             searchInput.addEventListener('input', (e) => {
                 const term = e.target.value.toLowerCase();
+                const filtered = historyData.filter(item => 
+                    `${item.nombres} ${item.apellido_paterno} ${item.boleta} ${item.grupo}`.toLowerCase().includes(term)
+                );
+                renderTable(filtered);
+            });
+        }
+
+        if (simSearchInput) {
+            simSearchInput.addEventListener('input', (e) => {
+                const term = e.target.value.toLowerCase();
                 if (term.length < 2) {
-                    searchResults.classList.remove('active');
+                    simSearchResults.classList.remove('active');
                     return;
                 }
                 
@@ -89,24 +119,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     `${s.nombres} ${s.apellido_paterno} ${s.boleta}`.toLowerCase().includes(term)
                 ).slice(0, 8); 
 
-                renderSearchResults(filtered);
+                renderSimSearchResults(filtered);
             });
 
             document.addEventListener('click', (e) => {
-                if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
-                    searchResults.classList.remove('active');
+                if (!simSearchInput.contains(e.target) && !simSearchResults.contains(e.target)) {
+                    simSearchResults.classList.remove('active');
                 }
             });
         }
 
-        btnEntrada.addEventListener('click', () => executeSimulation('entrada'));
-        btnSalida.addEventListener('click', () => executeSimulation('salida'));
+        if (btnEntrada) btnEntrada.addEventListener('click', () => executeSimulation('entrada'));
+        if (btnSalida) btnSalida.addEventListener('click', () => executeSimulation('salida'));
     }
 
-    function renderSearchResults(results) {
-        searchResults.innerHTML = '';
+    function renderSimSearchResults(results) {
+        simSearchResults.innerHTML = '';
         if (results.length === 0) {
-            searchResults.classList.remove('active');
+            simSearchResults.classList.remove('active');
             return;
         }
 
@@ -120,17 +150,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `;
             div.addEventListener('click', () => {
-                selectStudent(s);
+                selectStudentForSim(s);
             });
-            searchResults.appendChild(div);
+            simSearchResults.appendChild(div);
         });
-        searchResults.classList.add('active');
+        simSearchResults.classList.add('active');
     }
 
-    function selectStudent(student) {
-        searchInput.value = `${student.nombres} ${student.apellido_paterno}`;
+    function selectStudentForSim(student) {
+        simSearchInput.value = `${student.nombres} ${student.apellido_paterno}`;
         selectedIdInput.value = student.id_perfil_alumno;
-        searchResults.classList.remove('active');
+        simSearchResults.classList.remove('active');
         btnEntrada.disabled = false;
         btnSalida.disabled = false;
     }
@@ -142,13 +172,14 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await apiFetch('/api/asistencia/simular', 'POST', {
                 id_alumno: id,
-                tipo_movimiento: tipo
+                tipo: tipo
             });
 
             if (response.success) {
-                loadHistory(); 
+                loadHistory();
                 alert(response.message);
-                searchInput.value = '';
+                
+                simSearchInput.value = '';
                 selectedIdInput.value = '';
                 btnEntrada.disabled = true;
                 btnSalida.disabled = true;

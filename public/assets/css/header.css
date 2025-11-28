@@ -64,6 +64,24 @@
     gap: 16px;
 }
 
+.btn-nav-qr {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background-color: var(--accent-primary);
+    color: white !important;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background-color 0.2s;
+}
+.btn-nav-qr:hover {
+    background-color: var(--accent-hover);
+    filter: none;
+}
+
 #admin-user-info {
     display: flex;
     align-items: center;
@@ -85,18 +103,9 @@
     border: 2px solid var(--bg-input);
 }
 
-#admin-logout-button {
-    background-color: transparent;
-    color: var(--danger);
-    border: 1px solid var(--danger);
-    padding: 6px 12px;
+.btn-sm {
+    padding: 4px 10px;
     font-size: 12px;
-    transition: all 0.2s;
-}
-
-#admin-logout-button:hover {
-    background-color: var(--danger);
-    color: #ffffff;
 }
 
 .switcher {
@@ -110,50 +119,13 @@
     color: var(--text-primary);
 }
 
-.switcher__sun-beams {
-    transform-origin: center;
-    transition: transform 0.5s ease, opacity 0.2s ease;
-}
+.switcher__sun-beams { transform-origin: center; transition: transform 0.5s ease, opacity 0.2s ease; }
+.switcher__sun { transform-origin: center; transition: transform 0.5s ease; }
+.switcher__moon { transform-origin: center; transition: transform 0.5s ease; }
+.switcher--dark .switcher__sun-beams { transform: rotate(45deg); opacity: 0; }
+.switcher--dark .switcher__sun { transform: scale(0.6); }
+.switcher--dark .switcher__moon { transform: translateX(-8px); }
 
-.switcher__sun {
-    transform-origin: center;
-    transition: transform 0.5s ease;
-}
-
-.switcher__moon {
-    transform-origin: center;
-    transition: transform 0.5s ease;
-}
-
-.switcher--dark .switcher__sun-beams {
-    transform: rotate(45deg);
-    opacity: 0;
-}
-
-.switcher--dark .switcher__sun {
-    transform: scale(0.6);
-}
-
-.switcher--dark .switcher__moon {
-    transform: translateX(-8px);
-}
-
-@media (max-width: 768px) {
-    .main-header {
-        flex-direction: column;
-        height: auto;
-        padding: 16px;
-        gap: 16px;
-    }
-    
-    .header-nav {
-        flex-wrap: wrap;
-        justify-content: center;
-        width: 100%;
-    }
-    
-    .header-left, .header-right {
-        width: 100%;
-        justify-content: center;
-    }
+@media (max-width: 1000px) {
+    .header-nav { display: none; } 
 }

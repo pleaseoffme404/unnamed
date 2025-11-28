@@ -1,7 +1,8 @@
-CREATE DATABASE IF NOT EXISTS `asistencia_escolar`;
+DROP DATABASE IF EXISTS `asistencia_escolar`;
+CREATE DATABASE `asistencia_escolar`;
 USE `asistencia_escolar`;
 
-CREATE TABLE IF NOT EXISTS `usuarios` (
+CREATE TABLE `usuarios` (
     `id_usuario` INT AUTO_INCREMENT PRIMARY KEY,
     `correo_electronico` VARCHAR(255) NOT NULL UNIQUE,
     `contrasena_hash` VARCHAR(255) NOT NULL,
@@ -11,14 +12,16 @@ CREATE TABLE IF NOT EXISTS `usuarios` (
     `fecha_creacion` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS `grupos_disponibles` (
+CREATE TABLE `grupos_disponibles` (
     `id_grupo_disponible` INT AUTO_INCREMENT PRIMARY KEY,
     `grado` INT NOT NULL,
     `grupo` VARCHAR(10) NOT NULL,
+    `hora_entrada` TIME NOT NULL DEFAULT '07:00:00',
+    `hora_salida` TIME NOT NULL DEFAULT '14:00:00',
     UNIQUE(`grado`, `grupo`)
 );
 
-CREATE TABLE IF NOT EXISTS `perfil_admin` (
+CREATE TABLE `perfil_admin` (
     `id_perfil_admin` INT AUTO_INCREMENT PRIMARY KEY,
     `id_usuario_fk` INT NOT NULL UNIQUE,
     `nombre_completo` VARCHAR(255) NOT NULL,
@@ -26,10 +29,10 @@ CREATE TABLE IF NOT EXISTS `perfil_admin` (
     FOREIGN KEY (`id_usuario_fk`) REFERENCES `usuarios`(`id_usuario`) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS `perfil_alumno` (
+CREATE TABLE `perfil_alumno` (
     `id_perfil_alumno` INT AUTO_INCREMENT PRIMARY KEY,
     `id_usuario_fk` INT NOT NULL UNIQUE,
-    boleta VARCHAR(10) NOT NULL UNIQUE,
+    `boleta` VARCHAR(10) NOT NULL UNIQUE,
     `nombres` VARCHAR(150) NOT NULL,
     `apellido_paterno` VARCHAR(100) NOT NULL,
     `apellido_materno` VARCHAR(100),
@@ -44,7 +47,7 @@ CREATE TABLE IF NOT EXISTS `perfil_alumno` (
     FOREIGN KEY (`id_usuario_fk`) REFERENCES `usuarios`(`id_usuario`) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS `perfil_tutor` (
+CREATE TABLE `perfil_tutor` (
     `id_perfil_tutor` INT AUTO_INCREMENT PRIMARY KEY,
     `id_usuario_fk` INT NOT NULL UNIQUE,
     `nombres` VARCHAR(150) NOT NULL,
@@ -55,7 +58,7 @@ CREATE TABLE IF NOT EXISTS `perfil_tutor` (
     FOREIGN KEY (`id_usuario_fk`) REFERENCES `usuarios`(`id_usuario`) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS `vehiculos` (
+CREATE TABLE `vehiculos` (
     `id_vehiculo` INT AUTO_INCREMENT PRIMARY KEY,
     `id_perfil_alumno_fk` INT NOT NULL,
     `tipo` VARCHAR(100) NOT NULL,
@@ -65,7 +68,7 @@ CREATE TABLE IF NOT EXISTS `vehiculos` (
     FOREIGN KEY (`id_perfil_alumno_fk`) REFERENCES `perfil_alumno`(`id_perfil_alumno`) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS `alumnos_tutores` (
+CREATE TABLE `alumnos_tutores` (
     `id_relacion` INT AUTO_INCREMENT PRIMARY KEY,
     `id_perfil_alumno_fk` INT NOT NULL,
     `id_perfil_tutor_fk` INT NOT NULL,
@@ -75,16 +78,17 @@ CREATE TABLE IF NOT EXISTS `alumnos_tutores` (
     UNIQUE KEY `idx_alumno_tutor` (`id_perfil_alumno_fk`, `id_perfil_tutor_fk`)
 );
 
-CREATE TABLE IF NOT EXISTS `asistencia` (
+CREATE TABLE `asistencia` (
     `id_asistencia` INT AUTO_INCREMENT PRIMARY KEY,
     `id_perfil_alumno_fk` INT NOT NULL,
     `fecha_hora_entrada` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `fecha_hora_salida` TIMESTAMP NULL,
-    `metodo_entrada` ENUM('qr', 'manual') DEFAULT 'qr',
+    `estatus` ENUM('a_tiempo', 'retardo') DEFAULT 'a_tiempo',
+    `metodo_entrada` ENUM('qr', 'manual') DEFAULT 'qr',    
     FOREIGN KEY (`id_perfil_alumno_fk`) REFERENCES `perfil_alumno`(`id_perfil_alumno`) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS `anuncios` (
+CREATE TABLE `anuncios` (
     `id_anuncio` INT AUTO_INCREMENT PRIMARY KEY,
     `id_admin_fk` INT NOT NULL,
     `titulo` VARCHAR(255) NOT NULL,
@@ -94,7 +98,7 @@ CREATE TABLE IF NOT EXISTS `anuncios` (
     FOREIGN KEY (`id_admin_fk`) REFERENCES `perfil_admin`(`id_perfil_admin`)
 );
 
-CREATE TABLE IF NOT EXISTS `password_reset_tokens` (
+CREATE TABLE `password_reset_tokens` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `id_usuario_fk` INT NOT NULL,
     `token` VARCHAR(255) NOT NULL UNIQUE,
@@ -102,15 +106,28 @@ CREATE TABLE IF NOT EXISTS `password_reset_tokens` (
     FOREIGN KEY (`id_usuario_fk`) REFERENCES `usuarios`(`id_usuario`) ON DELETE CASCADE
 );
 
+CREATE TABLE `qr_logs` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `qr_uuid` VARCHAR(36) NOT NULL, 
+    `id_alumno_fk` INT NOT NULL,
+    `fecha_uso` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`id_alumno_fk`) REFERENCES `perfil_alumno`(`id_perfil_alumno`) ON DELETE CASCADE,
+    UNIQUE KEY `idx_qr_alumno` (`qr_uuid`, `id_alumno_fk`)
+);
 
-INSERT INTO grupos_disponibles (grado, grupo) VALUES 
-(1, '1IM1'), (1, '1IV1'),
-(2, '2IM1'), (2, '2IV1'),
-(3, '3IM1'), (3, '3IV1'),
-(4, '4IM1'), (4, '4IV1'),
-(5, '5IM1'), (5, '5IV1'),
-(6, '6IM1'), (6, '6IV1');
-
+INSERT INTO grupos_disponibles (grado, grupo, hora_entrada, hora_salida) VALUES 
+(1, '1IM1', '07:00:00', '14:00:00'), 
+(1, '1IV1', '14:00:00', '21:00:00'),
+(2, '2IM1', '07:00:00', '14:00:00'), 
+(2, '2IV1', '14:00:00', '21:00:00'),
+(3, '3IM1', '07:00:00', '14:00:00'), 
+(3, '3IV1', '14:00:00', '21:00:00'),
+(4, '4IM1', '07:00:00', '14:00:00'), 
+(4, '4IV1', '14:00:00', '21:00:00'),
+(5, '5IM1', '07:00:00', '14:00:00'), 
+(5, '5IV1', '14:00:00', '21:00:00'),
+(6, '6IM1', '07:00:00', '14:00:00'), 
+(6, '6IV1', '14:00:00', '21:00:00');
 
 INSERT INTO usuarios (correo_electronico, contrasena_hash, rol) 
 VALUES (

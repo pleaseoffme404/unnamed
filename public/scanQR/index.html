@@ -3,23 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Unnamed - Escanear QR</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../assets/css/style.css">
-    <link rel="stylesheet" href="../assets/css/header.css">
+    <title>Punto de Acceso - Unnamed</title>
+    
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="/assets/css/header.css">
+    <link rel="stylesheet" href="/assets/css/kiosk.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 
     <header class="main-header qr-header">
         <div class="header-left">
-             <button id="back-to-dashboard-secure" class="header-back-button">Volver a Dashboard</button>
+             <h1 class="header-title">Unnamed</h1>
         </div>
         <div class="header-center">
             <span id="header-clock" class="header-clock-display">00:00:00</span>
         </div>
         <div class="header-right">
+            <button id="back-to-dashboard-secure" class="btn btn-secondary btn-lock">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:5px;">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                Dashboard
+            </button>
             <svg id="switcher" class="switcher" aria-hidden="true" width="24" height="24" viewBox="0 0 24 24">
                 <circle class="switcher__sun" cx="12" cy="12" r="6" mask="url(#moon-mask)" fill="currentColor" />
                 <g class="switcher__sun-beams" stroke="currentColor">
@@ -40,61 +47,91 @@
         </div>
     </header>
 
-    <main class="page-content qr-page-layout"> <section class="qr-left-column">
-            <h2>Escanear Código</h2>
-            <div class="qr-code-wrapper">
-                 <img src="../assets/img/qrCode/placeholder.png" alt="Código QR para registro" id="qr-code-image">
+    <main class="kiosk-split-layout">
+        
+        <section class="qr-column">
+            <div class="qr-wrapper">
+                <h2>Escanear Entrada</h2>
+                <div class="qr-box">
+                    <div id="qrcode"></div>
+                </div>
+                <div class="timer-bar"><div class="timer-progress" id="progress-bar"></div></div>
+                <p class="qr-help-text">Actualizando código de seguridad...</p>
+                
+                <div class="debug-simulator">
+                    <select id="sim-student-select"><option>Cargando...</option></select>
+                    <button id="btn-simulate-scan">Simular Escaneo</button>
+                </div>
             </div>
-            <p class="qr-instructions">Apunta la cámara de tu dispositivo al código.</p>
-            <button id="simulate-scan-btn" class="action-button small-button" style="margin-top: 20px;">Simular Escaneo</button>
         </section>
 
-        <section class="qr-right-column">
-            <h2>Información Registrada</h2>
-            <div id="scan-results" class="scan-results-container">
-                <div class="scan-user-info">
-                    <div class="user-photo-placeholder"></div>
-                    <p class="user-name-group"><strong id="user-name">Nombre Apellido</strong> (<span id="user-group">Grupo</span>)</p>
-                    <p class="user-schedule">Horario: <span id="user-schedule-time">00:00 - 00:00</span></p>
-                    <p><span id="user-status" class="scan-status"></span></p>
+        <section class="info-column">
+            <div id="default-state" class="info-state active">
+                <div class="idle-icon">
+                    <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <h3>Esperando Alumno...</h3>
+                <p>Escanea el código QR para registrar tu acceso.</p>
+            </div>
+
+            <div id="user-result" class="info-state">
+                <div class="user-header">
+                    <img id="user-photo" src="" alt="Foto">
+                    <div class="user-main-text">
+                        <h2 id="user-name">Nombre Completo</h2>
+                        <span id="user-group" class="badge">Grupo 1IM1</span>
+                    </div>
                 </div>
 
-                <hr class="section-divider">
-
-                <div class="scan-vehicle-info">
-                     <div class="vehicle-photo-placeholder"></div>
-                     <p class="vehicle-details"><span id="vehicle-color">Color</span> - <span id="vehicle-type">Tipo/Marca</span></p>
+                <div class="status-display" id="access-status">
+                    <span class="status-icon">✓</span>
+                    <span class="status-text">Entrada Autorizada</span>
                 </div>
 
-                 <p id="waiting-scan-message" class="waiting-message">Esperando escaneo...</p>
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <label>Horario Entrada</label>
+                        <span id="schedule-in">--:--</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Horario Salida</label>
+                        <span id="schedule-out">--:--</span>
+                    </div>
+                </div>
+
+                <div id="vehicle-card" class="vehicle-card hidden">
+                    <div id="vehicle-visual" class="vehicle-visual-container">
+                        </div>
+                    <div class="vehicle-info">
+                        <strong>Vehículo Registrado</strong>
+                        <p id="vehicle-desc">Sedan Rojo - Placas 123</p>
+                    </div>
+                </div>
             </div>
         </section>
 
     </main>
 
-    <footer class="main-footer">
-        <p>Endware Solutions 2025</p>
-    </footer>
-
     <div id="reauth-modal" class="modal">
-        <div class="modal-content reauth-modal-content">
-            <span class="close-button" id="reauth-close-button">&times;</span>
-            <h2>Verificar Identidad</h2>
-            <p>Por seguridad, ingresa tu contraseña para continuar al dashboard.</p>
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <h3>Seguridad</h3>
+            <p>Ingresa tu contraseña para volver al Dashboard.</p>
             <form id="reauth-form">
                 <div class="form-group">
-                    <label for="reauth-password">Contraseña</label>
-                    <input type="password" id="reauth-password" name="reauth-password" required placeholder="••••••••">
-                    <small class="error-message" id="reauth-error-message"></small>
+                    <input type="password" id="reauth-pass" placeholder="Contraseña de Admin" required style="text-align: center;">
                 </div>
-                <button type="submit" id="reauth-submit" class="action-button submit-button">Verificar y Continuar</button>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Desbloquear</button>
+                <button type="button" id="cancel-reauth" class="btn btn-secondary" style="width: 100%; margin-top: 10px;">Cancelar</button>
             </form>
         </div>
     </div>
 
-    <script src="../assets/js/theme-changer.js"></script>
-    <script src="../assets/js/input-validator.js"></script>
-    <script src="../assets/js/qrCode-manager.js"></script>
+    <script src="/assets/js/api.js"></script>
+    <script src="/assets/js/theme-changer.js"></script>
+    <script src="/assets/js/qr-kiosk.js"></script>
 
 </body>
 </html>

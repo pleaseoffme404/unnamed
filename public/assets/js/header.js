@@ -1,7 +1,16 @@
 document.addEventListener('DOMContentLoaded', () => {
     
     const currentPath = window.location.pathname;
-    const isLoginPage = currentPath === '/' || (currentPath.includes('index.html') && !currentPath.includes('/dashboard') && !currentPath.includes('/alumnos') && !currentPath.includes('/tutores') && !currentPath.includes('/historial') &&! currentPath.includes('/announcements'));
+    
+    const isLoginPage = currentPath === '/' || (
+        currentPath.includes('index.html') && 
+        !currentPath.includes('/dashboard') && 
+        !currentPath.includes('/alumnos') && 
+        !currentPath.includes('/tutores') && 
+        !currentPath.includes('/historial') &&
+        !currentPath.includes('/announcements') &&
+        !currentPath.includes('/scanQR') 
+    );
 
     if (isLoginPage) return;
 
@@ -42,15 +51,25 @@ document.addEventListener('DOMContentLoaded', () => {
             </nav>
 
             <div class="header-right">
+                <a href="/scanQR/index.html" class="btn-nav-qr">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <path d="M3 14h7v7H3z"></path>
+                    </svg>
+                    <span>Escanear QR</span>
+                </a>
+
                 <div id="admin-user-info" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
                     <span id="admin-username" style="font-weight: 500; font-size: 14px;">${user.nombre || user.email}</span>
                     <img src="${user.imagen || '/assets/img/default-avatar.png'}" alt="Avatar" id="admin-avatar" 
                          style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 2px solid var(--bg-input);">
                 </div>
 
-                <button id="admin-logout-button" style="margin-left: 15px;" class="btn btn-danger">Salir</button>
+                <button id="admin-logout-button" style="margin-left: 10px;" class="btn btn-danger btn-sm">Salir</button>
 
-                <svg id="switcher" class="switcher" aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" style="margin-left: 15px;">
+                <svg id="switcher" class="switcher" aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" style="margin-left: 10px;">
                     <circle class="switcher__sun" cx="12" cy="12" r="6" mask="url(#moon-mask)" fill="currentColor" />
                     <g class="switcher__sun-beams" stroke="currentColor">
                         <line x1="12" y1="1" x2="12" y2="3" />
@@ -78,9 +97,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentTheme === 'dark' && switcher) {
             document.body.classList.add('dark-theme');
             switcher.classList.add('switcher--dark');
-        } else {
-            document.body.classList.remove('dark-theme');
-            if(switcher) switcher.classList.remove('switcher--dark');
         }
     }
 

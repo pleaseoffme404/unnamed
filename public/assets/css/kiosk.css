@@ -1,0 +1,230 @@
+body {
+    overflow: hidden; 
+}
+
+.qr-header .header-center {
+    flex: 1;
+    text-align: center;
+}
+
+.header-clock-display {
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--text-primary);
+    letter-spacing: 2px;
+}
+
+.btn-lock {
+    background-color: var(--bg-input);
+    border: 1px solid var(--border-color);
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+}
+
+.kiosk-split-layout {
+    display: flex;
+    height: calc(100vh - 60px);
+    background-color: var(--bg-app);
+}
+
+.qr-column {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-right: 1px solid var(--border-color);
+    background-color: var(--bg-panel);
+    padding: 40px;
+}
+
+.info-column {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    background-color: var(--bg-app);
+}
+
+.qr-wrapper {
+    text-align: center;
+    width: 100%;
+    max-width: 400px;
+}
+
+.qr-box {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: var(--shadow-md);
+    margin: 20px auto;
+    display: inline-block;
+}
+
+.timer-bar {
+    width: 100%;
+    height: 4px;
+    background: var(--bg-input);
+    margin-top: 20px;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.timer-progress {
+    height: 100%;
+    background: var(--accent-primary);
+    width: 100%;
+}
+
+.qr-help-text {
+    margin-top: 15px;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+.info-state {
+    display: none;
+    width: 100%;
+    max-width: 500px;
+    text-align: center;
+    animation: fadeIn 0.3s ease;
+}
+.info-state.active { display: block; }
+
+.idle-icon { margin-bottom: 20px; opacity: 0.5; }
+
+.user-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+#user-photo {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 5px solid var(--bg-panel);
+    box-shadow: var(--shadow-md);
+    margin-bottom: 20px;
+}
+
+.user-main-text h2 {
+    margin: 0 0 10px 0;
+    font-size: 28px;
+    color: var(--text-primary);
+}
+
+.badge {
+    background: var(--accent-primary);
+    color: white;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.status-display {
+    background: var(--success);
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    box-shadow: 0 4px 15px rgba(35, 165, 89, 0.3);
+}
+.status-display.out { background: var(--warning); box-shadow: 0 4px 15px rgba(240, 177, 50, 0.3); }
+.status-display.late { background: #d99f26; }
+
+.status-icon { font-size: 32px; font-weight: bold; }
+.status-text { font-size: 24px; font-weight: 800; text-transform: uppercase; }
+
+.details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.detail-item {
+    background: var(--bg-panel);
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.detail-item label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.detail-item span {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* VEHICULO */
+.vehicle-card {
+    background: var(--bg-panel);
+    border: 2px solid var(--accent-primary);
+    border-radius: 12px;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    text-align: left;
+}
+.vehicle-card.hidden { display: none; }
+
+.vehicle-visual-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 70px;
+    height: 70px;
+}
+
+.vehicle-icon { font-size: 35px; }
+
+.vehicle-img {
+    width: 70px;
+    height: 70px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 1px solid var(--border-color);
+}
+
+.vehicle-info strong { display: block; color: var(--accent-primary); margin-bottom: 4px; }
+.vehicle-info p { margin: 0; color: var(--text-primary); font-size: 14px; }
+
+.debug-simulator {
+    margin-top: 40px;
+    padding: 15px;
+    border: 1px dashed var(--border-color);
+    border-radius: 8px;
+    display: flex;
+    gap: 10px;
+}
+.debug-simulator select { flex: 1; }
+
+#reauth-modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.8);
+    z-index: 200;
+    justify-content: center;
+    align-items: center;
+}
+#reauth-modal.active { display: flex; }

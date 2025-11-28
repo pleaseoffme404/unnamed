@@ -8,10 +8,19 @@
     <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="stylesheet" href="../assets/css/header.css">
     <link rel="stylesheet" href="../assets/css/table-view.css">
+    <link rel="stylesheet" href="../assets/css/historial.css">
+    
     <style>
-        .status-dot { font-weight: bold; font-size: 12px; }
-        .in-campus { color: var(--success); }
-        .out-campus { color: var(--text-muted); }
+        .status-ontime {
+            background-color: rgba(35, 165, 89, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(35, 165, 89, 0.2);
+        }
+        .status-late {
+            background-color: rgba(240, 177, 50, 0.1);
+            color: #d99f26;
+            border: 1px solid rgba(240, 177, 50, 0.3);
+        }
     </style>
 </head>
 <body>
@@ -23,9 +32,15 @@
         <div class="page-header">
             <h2 class="page-title">Historial de Accesos</h2>
             
-            <a href="simulador.html" class="btn btn-primary" style="background-color: var(--warning); border-color: var(--warning); color: #000;">
-                ⚡ Simulador (Dev Mode)
+            <a href="simulador.html" class="btn btn-primary" style="background-color: var(--warning); border-color: var(--warning); color: #000; font-weight:bold;">
+                Simulador (Dev)
             </a>
+        </div>
+
+        <div class="toolbar">
+            <div class="search-container" style="width: 100%;">
+                <input type="text" id="table-search-input" class="search-input" placeholder="Buscar en historial (Nombre, Boleta, Grupo)...">
+            </div>
         </div>
 
         <div class="table-wrapper">
@@ -33,15 +48,16 @@
                 <thead>
                     <tr>
                         <th>Alumno</th>
-                        <th>Boleta</th>
+                        <th>Grupo</th>
                         <th>Entrada</th>
                         <th>Salida</th>
+                        <th>Estatus</th>
                         <th>Método</th>
                     </tr>
                 </thead>
                 <tbody id="historial-tbody">
                     <tr>
-                        <td colspan="5" style="text-align: center; padding: 40px;">Cargando historial...</td>
+                        <td colspan="6" style="text-align: center; padding: 40px;">Cargando historial...</td>
                     </tr>
                 </tbody>
             </table>
@@ -51,47 +67,7 @@
 
     <script src="../assets/js/api.js"></script>
     <script src="../assets/js/header.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', async () => {
-            const tbody = document.getElementById('historial-tbody');
-            try {
-                const response = await apiFetch('/api/asistencia', 'GET');
-                if(response.success) {
-                    tbody.innerHTML = '';
-                    if(response.data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">Sin registros.</td></tr>';
-                        return;
-                    }
-                    response.data.forEach(h => {
-                        const entrada = new Date(h.fecha_hora_entrada).toLocaleString();
-                        const salida = h.fecha_hora_salida ? new Date(h.fecha_hora_salida).toLocaleString() : '--';
-                        const status = h.fecha_hora_salida ? '<span class="status-dot out-campus">● Completado</span>' : '<span class="status-dot in-campus">● En Campus</span>';
-                        
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td>
-                                <div class="user-cell">
-                                    <img src="${h.imagen_url || '../assets/img/default-avatar.png'}" class="user-avatar">
-                                    <div class="user-info">
-                                        <span class="user-name">${h.nombres} ${h.apellido_paterno}</span>
-                                        <span class="user-meta">${h.grupo || ''}</span>
-                                    </div>
-                                </div>
-                            </td>
-                            <td style="font-family:monospace;">${h.boleta}</td>
-                            <td>${entrada}</td>
-                            <td>${salida}</td>
-                            <td>${h.metodo_entrada === 'manual' ? 'Manual' : 'QR App'} <br> ${status}</td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
-                }
-            } catch(e) {
-                console.error(e);
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Error de conexión.</td></tr>';
-            }
-        });
-    </script>
+    <script src="../assets/js/historial-manager.js"></script>
 
 </body>
 </html>

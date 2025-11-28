@@ -3,93 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Unnamed - Dashboard</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <title>Dashboard - Unnamed</title>
     
     <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="stylesheet" href="../assets/css/header.css">
     <link rel="stylesheet" href="../assets/css/dashboard.css">
+    <link rel="stylesheet" href="../assets/css/table-view.css">
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
-    <header class="main-header">
-        <div class="header-left">
-             <div class="header-icon-placeholder"></div>
-             <h1 class="header-title">Unnamed</h1>
-        </div>
-        <nav class="header-nav">            
-            <a href="/scarQR">Scan QR</a>
-            <a href="/tutores">Datos Tutores</a>
-            <a href="/alumnos">Datos Alumnos</a>
-            <a href="/anouncements">Anuncios</a>
-            <a href="/historial">Historial</a>
-        </nav>
-        <div id="theme-switcher-button" class="theme-switcher">
-            <div class="theme-icon"></div>
-        </div>
-    </header>
+    <header class="main-header"></header>
 
     <main class="main-content">
+        
         <div class="dashboard-grid">
             
-            <div class="dashboard-card summary-card chart-card">
-                <h4>Alumnos Registrados</h4>
+            <div class="dashboard-card chart-card">
+                <h4>Asistencia en Tiempo Real (Hoy)</h4>
                 <div class="chart-container">
-                    <canvas id="alumnosChart"></canvas>
+                    <canvas id="attendanceChart"></canvas>
                 </div>
-                <a href="/alumnos" class="card-link">Ver Alumnos &rarr;</a>
-            </div>
-            
-            <div class="dashboard-card summary-card" id="card-tutores">
-                <h4>Tutores Registrados</h4>
-                <p class="stat-number">0</p>
-                <a href="/tutores" class="card-link">Ver Tutores &rarr;</a>
-            </div>
-            
-            <div class="dashboard-card summary-card" id="card-anuncios">
-                <h4>Anuncios Activos</h4>
-                <p class="stat-number alert-count-urgent">0</p>
-                <a href="/anouncements" class="card-link">Gestionar Anuncios &rarr;</a>
-            </div>
-            
-            <div class="dashboard-card quick-scan-card">
-                <h4>Escaner QR</h4>
-                <p>Acceso rápido para registrar entradas y salidas.</p>
-                <button class="action-button" id="btn-scan-qr">Escanear QR</button>
-            </div>
-            
-            <div class="dashboard-card recent-alerts">
-                <h4>Anuncios Recientes</h4>
-                <ul class="alerts-summary-list" id="list-recent-alerts">
-                    <li>
-                        <span class="alert-dot priority-urgente"></span>
-                        No hay anuncios recientes
-                    </li>
-                </ul>
-                <a href="/anouncements" class="card-link">Ver Todos &rarr;</a>
             </div>
 
-            <div class="dashboard-card recent-activity">
-                <h4>Actividad Reciente</h4>
-                <ul class="activity-summary-list" id="list-recent-activity">
-                    <li>
-                        <span class="activity-time">--:--</span>
-                        No hay actividad reciente
-                    </li>
-                </ul>
-                <a href="/historial" class="card-link">Ver Historial Completo &rarr;</a>
+            <div class="dashboard-card stat-card">
+                <h4>Alumnos</h4>
+                <p class="stat-number" id="stat-alumnos">0</p>
+                <div class="stat-meta">Registrados</div>
+                <a href="/alumnos/index.html" class="card-link">Ver Directorio &rarr;</a>
             </div>
 
-            <div class="dashboard-card quick-actions">
-                <h4>Acciones Rápidas</h4>
+            <div class="dashboard-card stat-card">
+                <h4>Tutores</h4>
+                <p class="stat-number" id="stat-tutores">0</p>
+                <div class="stat-meta">Registrados</div>
+                <a href="/tutores/index.html" class="card-link">Gestionar &rarr;</a>
+            </div>
+
+            <div class="quick-actions">
+                <h4 style="margin-bottom: 10px; color: var(--text-secondary);">Accesos Directos</h4>
                 <div class="quick-actions-buttons">
-                    <button class="action-button" id="btn-regis-alumno">Registrar Alumno</button>
-                    <button class="action-button" id="btn-regis-tutor">Registrar Tutor</button>
-                    <button class="action-button secondary" id="btn-crear-anuncio">Crear Anuncio</button>
+                    <button class="action-button btn-secondary" id="btn-regis-alumno">+ Alumno</button>
+                    <button class="action-button btn-secondary" id="btn-regis-tutor">+ Tutor</button>
+                    <button class="action-button btn-secondary" id="btn-crear-anuncio">Nueva Alerta</button>
+                    <button class="action-button btn-secondary" id="btn-simulador" style="background-color: rgba(240, 177, 50, 0.1); color: #d99f26; border-color: rgba(240, 177, 50, 0.3);">Simulador (Dev)</button>
+                </div>
+            </div>
+
+            <div class="recent-activity-row">
+                <div class="dashboard-card" style="padding: 0; overflow: hidden; height: 100%;">
+                    <div style="padding: 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                        <h4 style="margin: 0;">Últimos Movimientos (Hoy)</h4>
+                        <a href="/historial/index.html" style="font-size: 13px;">Ver Todo</a>
+                    </div>
+                    <div class="table-wrapper" style="border: none; box-shadow: none; border-radius: 0;">
+                        <table id="recent-table">
+                            <thead>
+                                <tr>
+                                    <th>Alumno</th>
+                                    <th>Hora</th>
+                                    <th>Estatus</th>
+                                    <th>Tipo</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-tbody">
+                                <tr><td colspan="4" style="text-align: center; padding: 20px;">Cargando...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
@@ -100,9 +82,9 @@
         <p>Endware Solutions 2025</p>
     </footer>
 
-    <script src="../assets/js/header.js"></script>
     <script src="../assets/js/api.js"></script>
-    <script src="assets/js/auth.js"></script>
+    <script src="../assets/js/header.js"></script>
     <script src="../assets/js/dashboard.js"></script>
+
 </body>
 </html>
