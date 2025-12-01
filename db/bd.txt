@@ -141,3 +141,4 @@ VALUES (
     (SELECT id_usuario FROM usuarios WHERE correo_electronico = 'admin@bullnodes.com'),
     'Administrador Principal'
 );
+ALTER TABLE usuarios ADD COLUMN token_sesion_actual VARCHAR(255) NULL;
