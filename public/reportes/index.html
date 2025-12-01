@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reportes - Unnamed Admin</title>
+    
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="/assets/css/header.css">
+    <link rel="stylesheet" href="/assets/css/reportes.css">
+</head>
+<body>
+
+    <header class="main-header"></header>
+
+    <main class="page-content">
+        <div class="page-header">
+            <h2 class="page-title">Centro de Reportes</h2>
+        </div>
+
+        <div class="reports-grid">
+            
+            <div class="report-card">
+                <img src="/assets/img/calendar-icon.png" alt="Icono Calendario" class="report-img">
+                <h3>Reporte de Asistencia</h3>
+                <p>Historial detallado por días, grupos o alumnos específicos.</p>
+                
+                <form id="form-asistencia">
+                    <div class="report-filters">
+                        <div class="form-group">
+                            <label>Fecha Inicio</label>
+                            <input type="date" name="fechaInicio" id="f-inicio" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Fecha Fin</label>
+                            <input type="date" name="fechaFin" id="f-fin" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Grupo (Opcional)</label>
+                            <select name="grupo" id="f-grupo">
+                                <option value="">Todos</option>
+                                </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Boleta Alumno (Opcional)</label>
+                            <input type="text" name="boleta" placeholder="10 Dígitos" maxlength="10">
+                        </div>
+                    </div>
+                    <div id="feedback-asistencia" class="feedback-mini"></div>
+                    <div class="download-buttons">
+                        <button type="button" class="btn btn-secondary btn-full" onclick="downloadReport('asistencia', 'pdf')">PDF</button>
+                        <button type="button" class="btn btn-primary btn-full" onclick="downloadReport('asistencia', 'csv')">Excel</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="report-card">
+                <img src="/assets/img/student-icon.png" alt="Icono Alumno" class="report-img">
+                <h3>Directorio de Alumnos</h3>
+                <p>Lista completa de alumnos inscritos y activos.</p>
+                
+                <form id="form-alumnos">
+                    <div class="report-filters">
+                        <div class="form-group full-width">
+                            <label>Filtrar por Semestre</label>
+                            <select name="grado">
+                                <option value="">Todos los Semestres</option>
+                                <option value="1">1er Semestre</option>
+                                <option value="2">2do Semestre</option>
+                                <option value="3">3er Semestre</option>
+                                <option value="4">4to Semestre</option>
+                                <option value="5">5to Semestre</option>
+                                <option value="6">6to Semestre</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="download-buttons">
+                        <button type="button" class="btn btn-secondary btn-full" onclick="downloadReport('alumnos', 'pdf')">PDF</button>
+                        <button type="button" class="btn btn-primary btn-full" onclick="downloadReport('alumnos', 'csv')">Excel</button>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </main>
+
+    <script src="/assets/js/api.js"></script>
+    <script src="/assets/js/header.js"></script>
+    <script src="/assets/js/reportes-manager.js"></script>
+
+</body>
+</html>

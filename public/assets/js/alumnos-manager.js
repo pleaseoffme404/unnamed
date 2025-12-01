@@ -3,7 +3,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('search-input');
     const filterGrade = document.getElementById('filter-grade');
     
-
     const listView = document.getElementById('list-view');
     const detailView = document.getElementById('detail-view');
     const studentForm = document.getElementById('student-form');
@@ -69,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const row = document.createElement('tr');
             const avatar = alumno.imagen_url || '../assets/img/default-avatar.png';
             const nombre = `${alumno.nombres} ${alumno.apellido_paterno}`;
-            const statusClass = alumno.esta_activo ? 'success' : 'danger';
+            const statusColor = alumno.esta_activo ? 'var(--success)' : 'var(--danger)';
             const statusText = alumno.esta_activo ? 'Activo' : 'Inactivo';
             
             row.innerHTML = `
@@ -83,13 +82,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </td>
                 <td>
-                    <div style="font-family:monospace; font-size:12px;">
-                        <div>${alumno.curp}</div>
-                        <div style="color:var(--text-muted);">${alumno.nss || '-'}</div>
+                    <div style="display:flex; flex-direction:column; font-size:12px;">
+                        <span style="font-weight:700; font-family:monospace; font-size:13px; color:var(--accent-primary);">${alumno.boleta}</span>
+                        <span style="color:var(--text-muted);">${alumno.curp}</span>
                     </div>
                 </td>
-                <td><span class="badge badge-primary">${alumno.grado || '?'}° ${alumno.grupo || '?'}</span></td>
-                <td><span style="color:var(--${statusClass});font-weight:700;font-size:12px;">● ${statusText}</span></td>
+                <td>
+                    <span class="badge badge-primary">${alumno.grado || '?'}° ${alumno.grupo || '?'}</span>
+                </td>
+                <td>
+                    <span style="color:${statusColor}; font-weight:700; font-size:12px;">
+                        ● ${statusText}
+                    </span>
+                </td>
                 <td style="text-align:right;">
                     <button class="action-btn btn-view" data-id="${alumno.id_perfil_alumno}">Editar / Ver</button>
                 </td>
@@ -107,7 +112,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (filterGrade) filterGrade.addEventListener('change', filterData);
 
         if (btnCloseDetail) {
-            btnCloseDetail.addEventListener('click', () => {
+            btnCloseDetail.addEventListener('click', (e) => {
+                e.preventDefault(); 
                 detailView.classList.add('hidden');
                 listView.classList.remove('hidden');
             });
@@ -169,7 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const grade = filterGrade.value;
 
         const filtered = allAlumnos.filter(a => {
-            const textMatch = `${a.nombres} ${a.apellido_paterno} ${a.curp} ${a.correo_electronico}`.toLowerCase().includes(term);
+            const textMatch = `${a.nombres} ${a.apellido_paterno} ${a.curp} ${a.boleta} ${a.correo_electronico}`.toLowerCase().includes(term);
             const gradeMatch = grade === '' || (a.grado && a.grado.toString() === grade);
             return textMatch && gradeMatch;
         });
@@ -181,9 +187,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if(!student) return;
 
         document.getElementById('student-id').value = student.id_perfil_alumno;
-        document.getElementById('student-active').value = student.esta_activo ? '1' : '0';
+        
+        const isActive = student.esta_activo === 1 || student.esta_activo === true;
+        document.getElementById('student-active').value = isActive ? '1' : '0';
+        
         document.getElementById('student-image-url').value = student.imagen_url;
 
+        document.getElementById('d-boleta').value = student.boleta; 
         document.getElementById('d-nombres').value = student.nombres;
         document.getElementById('d-paterno').value = student.apellido_paterno;
         document.getElementById('d-materno').value = student.apellido_materno || '';
@@ -200,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const btnDelete = document.getElementById('btn-soft-delete');
         if (btnDelete) {
-            if(student.esta_activo) {
+            if(isActive) {
                 btnDelete.textContent = 'Desactivar Alumno';
                 btnDelete.className = 'btn btn-danger';
             } else {

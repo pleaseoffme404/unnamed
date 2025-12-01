@@ -14,7 +14,7 @@
     <header class="main-header"></header>
 
     <main class="page-content">
-        <div class="register-card" style="max-width: 600px;">
+        <div class="register-card" style="max-width: 650px;">
             <div class="register-header">
                 <h2 class="page-title">Carga Masiva de Alumnos</h2>
                 <a href="/alumnos/index.html" class="btn btn-secondary">Volver</a>
@@ -22,10 +22,15 @@
 
             <div style="background-color: var(--bg-input); padding: 15px; border-radius: 6px; margin-bottom: 20px; font-size: 13px; color: var(--text-secondary);">
                 <strong>Instrucciones:</strong>
-                <p>Sube un archivo .CSV con las siguientes columnas (el orden importa):</p>
+                <p>Sube un archivo .CSV con las siguientes columnas (orden sugerido):</p>
                 <code style="display:block; margin: 8px 0; font-family: monospace; background: var(--bg-panel); padding: 8px; border-radius: 4px;">
-                    correo_electronico, telefono, contrasena, nombres, apellido_paterno, apellido_materno, fecha_nacimiento, curp, nss, tipo_sangre, grado, grupo
+                    correo_electronico, telefono, contrasena, nombres, apellido_paterno, apellido_materno, fecha_nacimiento, curp, boleta, nss, tipo_sangre, grado, grupo
                 </code>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>Contraseña:</strong> Opcional. Si se deja vacía, se generará: <em>Iniciales + MMYY + 4 dígitos boleta</em>.</li>
+                    <li><strong>Fecha Nacimiento:</strong> Formato YYYY-MM-DD (Obligatoria si no hay contraseña).</li>
+                    <li><strong>Boleta:</strong> 10 dígitos obligatorios.</li>
+                </ul>
             </div>
 
             <form id="mass-register-form">
@@ -35,7 +40,7 @@
                         <polyline points="17 8 12 3 7 8"/>
                         <line x1="12" y1="3" x2="12" y2="15"/>
                     </svg>
-                    <p style="margin-bottom: 10px;">Arrastra tu archivo CSV aquí o</p>
+                    <p style="margin-bottom: 10px;">Arrastra tu archivo CSV aquí</p>
                     <label for="csvFile" class="btn btn-secondary">Seleccionar Archivo</label>
                     <input type="file" id="csvFile" name="csvFile" accept=".csv" style="display: none;">
                     <p id="file-name" style="margin-top: 10px; font-weight: 600; color: var(--accent-primary);"></p>

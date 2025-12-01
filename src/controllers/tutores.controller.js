@@ -4,65 +4,6 @@ const csv = require('csv-parser');
 const { Readable } = require('stream');
 const { saveImage, deleteImage } = require('./utils.controller');
 
-const registerTutor = async (req, res) => {
-    const { 
-        nombres, apellido_paterno, apellido_materno, 
-        correo_electronico, telefono, contrasena, notificaciones,
-        alumnos 
-    } = req.body;
-
-    let imageUrl = null;
-
-    if (!correo_electronico || !contrasena || !nombres || !apellido_paterno) {
-        return res.status(400).json({ success: false, message: 'Faltan datos requeridos.' });
-    }
-
-    let connection;
-    try {
-        if (req.file) imageUrl = await saveImage(req.file, 'tutores', `${nombres} ${apellido_paterno}`);
-
-        connection = await pool.getConnection();
-        await connection.beginTransaction();
-
-        const salt = await bcrypt.genSalt(10);
-        const hash = await bcrypt.hash(contrasena, salt);
-
-        const [userRes] = await connection.query(
-            'INSERT INTO usuarios (correo_electronico, contrasena_hash, telefono, rol) VALUES (?, ?, ?, "tutor")',
-            [correo_electronico, hash, telefono]
-        );
-
-        const [tutorRes] = await connection.query(
-            'INSERT INTO perfil_tutor (id_usuario_fk, nombres, apellido_paterno, apellido_materno, notificaciones, imagen_url) VALUES (?, ?, ?, ?, ?, ?)',
-            [userRes.insertId, nombres, apellido_paterno, apellido_materno, notificaciones || 'correo', imageUrl]
-        );
-
-        if (alumnos) {
-            const alumnosIds = Array.isArray(alumnos) ? alumnos : [alumnos];
-            
-            for (const alumnoId of alumnosIds) {
-                if(alumnoId) {
-                    await connection.query(
-                        'INSERT INTO alumnos_tutores (id_perfil_alumno_fk, id_perfil_tutor_fk, parentesco) VALUES (?, ?, ?)',
-                        [alumnoId, tutorRes.insertId, 'Tutor']
-                    );
-                }
-            }
-        }
-
-        await connection.commit();
-        res.status(201).json({ success: true, message: 'Tutor registrado.' });
-
-    } catch (error) {
-        if (connection) await connection.rollback();
-        if (imageUrl) await deleteImage(imageUrl);
-        console.error(error);
-        res.status(500).json({ success: false, message: error.code === 'ER_DUP_ENTRY' ? 'Correo o teléfono ya registrados.' : 'Error interno.' });
-    } finally {
-        if (connection) connection.release();
-    }
-};
-
 const getAllTutores = async (req, res) => {
     let connection;
     try {
@@ -79,7 +20,6 @@ const getAllTutores = async (req, res) => {
         );
         res.status(200).json({ success: true, data: rows });
     } catch (error) {
-        console.error(error);
         res.status(500).json({ success: false, message: 'Error interno.' });
     } finally {
         if (connection) connection.release();
@@ -119,6 +59,84 @@ const getTutorById = async (req, res) => {
     }
 };
 
+const registerTutor = async (req, res) => {
+    const { 
+        nombres, apellido_paterno, apellido_materno, 
+        correo_electronico, telefono, contrasena, notificaciones,
+        alumnos 
+    } = req.body;
+
+    let imageUrl = null;
+
+    if (!correo_electronico || !contrasena || !nombres || !apellido_paterno) {
+        return res.status(400).json({ success: false, message: 'Faltan datos requeridos.' });
+    }
+
+    let connection;
+    try {
+        if (req.file) imageUrl = await saveImage(req.file, 'tutores', `${nombres} ${apellido_paterno}`);
+
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+
+        // Validar límite de alumnos ANTES de crear nada
+        if (alumnos) {
+            const alumnosIds = Array.isArray(alumnos) ? alumnos : [alumnos];
+            for (const alumnoId of alumnosIds) {
+                if(alumnoId) {
+                    const [count] = await connection.query(
+                        'SELECT COUNT(*) as total FROM alumnos_tutores WHERE id_perfil_alumno_fk = ?',
+                        [alumnoId]
+                    );
+                    if (count[0].total >= 2) {
+                        throw new Error(`El alumno ID ${alumnoId} ya tiene el máximo de 2 tutores.`);
+                    }
+                }
+            }
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash(contrasena, salt);
+
+        const [userRes] = await connection.query(
+            'INSERT INTO usuarios (correo_electronico, contrasena_hash, telefono, rol) VALUES (?, ?, ?, "tutor")',
+            [correo_electronico, hash, telefono]
+        );
+
+        const [tutorRes] = await connection.query(
+            'INSERT INTO perfil_tutor (id_usuario_fk, nombres, apellido_paterno, apellido_materno, notificaciones, imagen_url) VALUES (?, ?, ?, ?, ?, ?)',
+            [userRes.insertId, nombres, apellido_paterno, apellido_materno, notificaciones || 'correo', imageUrl]
+        );
+
+        if (alumnos) {
+            const alumnosIds = Array.isArray(alumnos) ? alumnos : [alumnos];
+            for (const alumnoId of alumnosIds) {
+                if(alumnoId) {
+                    await connection.query(
+                        'INSERT INTO alumnos_tutores (id_perfil_alumno_fk, id_perfil_tutor_fk, parentesco) VALUES (?, ?, ?)',
+                        [alumnoId, tutorRes.insertId, 'Tutor']
+                    );
+                }
+            }
+        }
+
+        await connection.commit();
+        res.status(201).json({ success: true, message: 'Tutor registrado.' });
+
+    } catch (error) {
+        if (connection) await connection.rollback();
+        if (imageUrl) await deleteImage(imageUrl);
+        
+        let msg = 'Error interno.';
+        if (error.code === 'ER_DUP_ENTRY') msg = 'Correo o teléfono ya registrados.';
+        if (error.message.includes('máximo de 2 tutores')) msg = error.message;
+
+        res.status(400).json({ success: false, message: msg });
+    } finally {
+        if (connection) connection.release();
+    }
+};
+
 const updateTutor = async (req, res) => {
     const { id } = req.params;
     const { 
@@ -142,6 +160,25 @@ const updateTutor = async (req, res) => {
         }
         const id_usuario = rows[0].id_usuario_fk;
 
+        // Primero borramos relaciones viejas para poder validar correctamente los cupos
+        await connection.query('DELETE FROM alumnos_tutores WHERE id_perfil_tutor_fk = ?', [id]);
+
+        // Validamos cupos
+        if (alumnos) {
+            const alumnosIds = Array.isArray(alumnos) ? alumnos : [alumnos];
+            for (const alumnoId of alumnosIds) {
+                if(alumnoId) {
+                    const [count] = await connection.query(
+                        'SELECT COUNT(*) as total FROM alumnos_tutores WHERE id_perfil_alumno_fk = ?',
+                        [alumnoId]
+                    );
+                    if (count[0].total >= 2) {
+                        throw new Error(`El alumno ID ${alumnoId} ya tiene 2 tutores (sin contar a este).`);
+                    }
+                }
+            }
+        }
+
         if (req.file) {
             newImageUrl = await saveImage(req.file, 'tutores', `${nombres} ${apellido_paterno}`);
             if (imagen_url_actual) await deleteImage(imagen_url_actual);
@@ -162,8 +199,6 @@ const updateTutor = async (req, res) => {
             await connection.query('UPDATE usuarios SET contrasena_hash=? WHERE id_usuario=?', [hash, id_usuario]);
         }
 
-        await connection.query('DELETE FROM alumnos_tutores WHERE id_perfil_tutor_fk = ?', [id]);
-
         if (alumnos) {
             const alumnosIds = Array.isArray(alumnos) ? alumnos : [alumnos];
             for (const alumnoId of alumnosIds) {
@@ -180,8 +215,9 @@ const updateTutor = async (req, res) => {
         res.status(200).json({ success: true, message: 'Actualizado.' });
     } catch (error) {
         if (connection) await connection.rollback();
-        console.error(error);
-        res.status(500).json({ success: false, message: 'Error al actualizar.' });
+        let msg = 'Error al actualizar.';
+        if (error.message.includes('tiene 2 tutores')) msg = error.message;
+        res.status(400).json({ success: false, message: msg });
     } finally {
         if (connection) connection.release();
     }
@@ -243,8 +279,14 @@ const registerTutoresMasivo = async (req, res) => {
                             const [alumnos] = await connection.query('SELECT id_perfil_alumno FROM perfil_alumno WHERE boleta = ?', [boleta_alumno]);
                             if (alumnos.length > 0) {
                                 idAlumno = alumnos[0].id_perfil_alumno;
-                            } else {
-                               
+                                // VALIDACIÓN DE CUPO MASIVA
+                                const [count] = await connection.query(
+                                    'SELECT COUNT(*) as total FROM alumnos_tutores WHERE id_perfil_alumno_fk = ?',
+                                    [idAlumno]
+                                );
+                                if (count[0].total >= 2) {
+                                    throw new Error(`El alumno con boleta ${boleta_alumno} ya tiene 2 tutores.`);
+                                }
                             }
                         }
 
@@ -264,8 +306,6 @@ const registerTutoresMasivo = async (req, res) => {
                                 'INSERT INTO alumnos_tutores (id_perfil_alumno_fk, id_perfil_tutor_fk, parentesco) VALUES (?, ?, ?)',
                                 [idAlumno, tutorRes.insertId, 'Tutor']
                             );
-                        } else if (boleta_alumno) {
-                            processingErrors.push({ fila: index + 2, error: `Tutor registrado, pero boleta alumno '${boleta_alumno}' no encontrada.` });
                         }
 
                         await connection.commit();
@@ -273,14 +313,15 @@ const registerTutoresMasivo = async (req, res) => {
                     } catch (error) {
                         await connection.rollback();
                         let msg = 'Error BD';
-                        if (error.code === 'ER_DUP_ENTRY') msg = 'Correo o teléfono duplicado';
+                        if (error.code === 'ER_DUP_ENTRY') msg = 'Correo/Teléfono duplicado';
+                        if (error.message.includes('ya tiene 2 tutores')) msg = error.message;
                         processingErrors.push({ fila: index + 2, error: msg });
                     }
                 }
 
                 res.status(201).json({
                     success: true,
-                    message: `Procesado. Registrados: ${count}. Alertas/Errores: ${processingErrors.length}.`,
+                    message: `Procesado. Registrados: ${count}. Errores: ${processingErrors.length}.`,
                     errores: processingErrors
                 });
 
@@ -293,9 +334,9 @@ const registerTutoresMasivo = async (req, res) => {
 };
 
 module.exports = {
-    registerTutor,
     getAllTutores,
     getTutorById,
+    registerTutor,
     updateTutor,
     deleteTutor,
     registerTutoresMasivo

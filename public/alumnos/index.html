@@ -18,8 +18,8 @@
         
         <div class="search-grid">
             <div class="search-box">
-                <label for="search-input">Buscador</label>
-                <input type="text" id="search-input" placeholder="Nombre, CURP o Correo...">
+                <label for="search-input">Buscador Principal</label>
+                <input type="text" id="search-input" placeholder="Buscar por Boleta, Nombre o Correo...">
             </div>
             <div class="filter-box">
                 <label for="filter-grade">Filtrar Semestre</label>
@@ -44,8 +44,7 @@
                     <thead>
                         <tr>
                             <th>Alumno</th>
-                            <th>CURP / NSS</th>
-                            <th>Semestre / Grupo</th>
+                            <th>Boleta / CURP</th> <th>Semestre / Grupo</th>
                             <th>Estado</th>
                             <th style="text-align: right;">Acciones</th>
                         </tr>
@@ -78,6 +77,18 @@
                         </div>
 
                         <div class="form-col-data">
+                            
+                            <div class="row-2">
+                                <div class="form-group">
+                                    <label>Boleta (Identificador)</label>
+                                    <input type="text" id="d-boleta" name="boleta" readonly style="background-color: var(--bg-app); cursor: not-allowed; font-weight: bold; color: var(--text-primary);">
+                                </div>
+                                <div class="form-group">
+                                    <label>CURP</label>
+                                    <input type="text" id="d-curp" name="curp" required>
+                                </div>
+                            </div>
+
                             <div class="row-2">
                                 <div class="form-group">
                                     <label>Nombres</label>
@@ -92,17 +103,6 @@
                                 </div>
                             </div>
                             
-                            <div class="row-2">
-                                <div class="form-group">
-                                    <label>CURP</label>
-                                    <input type="text" id="d-curp" name="curp" required>
-                                </div>
-                                <div class="form-group">
-                                    <label>NSS</label>
-                                    <input type="text" id="d-nss" name="nss">
-                                </div>
-                            </div>
-
                             <div class="row-3">
                                 <div class="form-group">
                                     <label>Semestre</label>
@@ -126,6 +126,15 @@
                                         <option value="O-">O-</option>
                                     </select>
                                 </div>
+                            </div>
+
+                            <div class="row-2">
+                                <div class="form-group">
+                                    <label>NSS</label>
+                                    <input type="text" id="d-nss" name="nss">
+                                </div>
+                                <div class="form-group">
+                                    </div>
                             </div>
 
                             <div class="form-section-title">Contacto</div>

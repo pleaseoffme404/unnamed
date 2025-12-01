@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion de Grupos - Unnamed</title>
+    
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="/assets/css/header.css">
+    <link rel="stylesheet" href="/assets/css/table-view.css">
+    <link rel="stylesheet" href="/assets/css/grupos.css">
+</head>
+<body>
+
+    <header class="main-header"></header>
+
+    <main class="page-content">
+        
+        <div class="page-header">
+            <h2 class="page-title">Catalogo de Grupos</h2>
+            <button id="btn-new-group" class="btn btn-primary">+ Nuevo Grupo</button>
+        </div>
+
+        <div id="list-view" class="view-section">
+            <div class="table-wrapper">
+                <table id="groups-table">
+                    <thead>
+                        <tr>
+                            <th>Grupo</th>
+                            <th>Semestre</th>
+                            <th>Horario</th>
+                            <th>Alumnos Inscritos</th>
+                            <th style="text-align: right;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="groups-tbody">
+                        <tr><td colspan="5" style="text-align: center; padding: 40px;">Cargando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="detail-view" class="view-section hidden">
+            <div class="register-card">
+                
+                <div class="register-header">
+                    <h2 class="page-title" id="form-title" style="margin: 0; font-size: 18px;">Editar Grupo</h2>
+                    <button id="btn-close-detail" class="btn btn-danger">Cerrar</button>
+                </div>
+
+                <div class="group-detail-grid">
+                    <form id="group-form">
+                        <input type="hidden" id="group-id">
+                        
+                        <div class="form-group">
+                            <label>Semestre</label>
+                            <select id="grado" required>
+                                <option value="1">1</option><option value="2">2</option>
+                                <option value="3">3</option><option value="4">4</option>
+                                <option value="5">5</option><option value="6">6</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Identificador</label>
+                            <input type="text" id="grupo" required placeholder="Ej. 1IM1" maxlength="10">
+                        </div>
+
+                        <div class="row-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div class="form-group">
+                                <label>Hora Entrada</label>
+                                <input type="time" id="hora_entrada" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Hora Salida</label>
+                                <input type="time" id="hora_salida" required>
+                            </div>
+                        </div>
+
+                        <div class="form-actions-footer">
+                            <button type="button" id="btn-delete" class="btn btn-danger">Eliminar</button>
+                            <button type="submit" class="btn btn-primary">Guardar</button>
+                        </div>
+                    </form>
+
+                    <div id="students-section">
+                        <h4 style="margin-bottom: 15px; color: var(--text-secondary); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Alumnos en este grupo</h4>
+                        <div id="student-list" class="student-list-container">
+                            <p style="text-align: center; color: var(--text-muted); padding: 20px;">Selecciona un grupo para ver alumnos.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script src="/assets/js/api.js"></script>
+    <script src="/assets/js/header.js"></script>
+    <script src="/assets/js/grupos-manager.js"></script>
+
+</body>
+</html>

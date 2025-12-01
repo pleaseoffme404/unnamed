@@ -3,9 +3,11 @@ const router = express.Router();
 const controller = require('../controllers/auth.controller');
 const { isAuthenticated, isAdmin } = require('../middlewares/auth.middleware');
 const { uploadImage, handleUploadError } = require('../middlewares/upload.middleware');
-const { loginValidator } = require('../middlewares/validator.middleware');
+const { loginValidator, loginMobileValidator } = require('../middlewares/validator.middleware');
 
 router.post('/login', loginValidator, controller.login);
+router.post('/login-mobile', loginMobileValidator, controller.loginMobile);
+router.post('/login-phone', controller.loginPhone);
 router.get('/verificar', controller.verificar);
 router.post('/logout', controller.logout);
 

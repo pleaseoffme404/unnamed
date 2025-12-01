@@ -9,7 +9,10 @@ const anunciosRoutes = require('./anuncios.routes');
 const asistenciaRoutes = require('./asistencia.routes');
 const usuariosRoutes = require('./usuarios.routes');
 const statsRoutes = require('./stats.routes');
-const qrRoutes = require('./qr.routes'); 
+const qrRoutes = require('./qr.routes');
+const gruposRoutes = require('./grupos.routes');
+const reportesRoutes = require('./reportes.routes');
+const alumnosAppRoutes = require('./alumnos-app.routes');
 
 router.use('/auth', authRoutes);
 router.use('/alumnos', alumnosRoutes);
@@ -19,6 +22,9 @@ router.use('/anuncios', anunciosRoutes);
 router.use('/asistencia', asistenciaRoutes);
 router.use('/usuarios', usuariosRoutes);
 router.use('/stats', statsRoutes);
-router.use('/qr', qrRoutes); 
+router.use('/qr', qrRoutes);
+router.use('/grupos', gruposRoutes);
+router.use('/reportes', reportesRoutes);
+router.use('/student', alumnosAppRoutes); 
 
 module.exports = router;

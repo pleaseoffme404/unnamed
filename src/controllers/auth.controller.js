@@ -3,12 +3,13 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { sendEmail } = require('../services/email.service');
 const { saveImage, deleteImage } = require('./utils.controller');
+const firebaseAdmin = require('../services/firebase.service');
 
 const login = async (req, res) => {
     const { correo, password } = req.body;
 
     if (!correo || !password) {
-        return res.status(400).json({ success: false, message: 'Correo y contraseña son requeridos.' });
+        return res.status(400).json({ success: false, message: 'Faltan datos.' });
     }
 
     let connection;
@@ -22,21 +23,13 @@ const login = async (req, res) => {
             [correo]
         );
 
-        if (rows.length === 0) {
-            return res.status(401).json({ success: false, message: 'Credenciales inválidas.' });
-        }
+        if (rows.length === 0) return res.status(401).json({ success: false, message: 'Credenciales inválidas.' });
 
         const user = rows[0];
-
-        if (user.rol !== 'admin') {
-            return res.status(403).json({ success: false, message: 'Acceso denegado. Solo administradores.' });
-        }
+        if (user.rol !== 'admin') return res.status(403).json({ success: false, message: 'Acceso denegado.' });
 
         const isMatch = await bcrypt.compare(password, user.contrasena_hash);
-
-        if (!isMatch) {
-            return res.status(401).json({ success: false, message: 'Credenciales inválidas.' });
-        }
+        if (!isMatch) return res.status(401).json({ success: false, message: 'Credenciales inválidas.' });
 
         req.session.user = {
             id: user.id_usuario,
@@ -47,20 +40,102 @@ const login = async (req, res) => {
         };
 
         req.session.save(err => {
-            if (err) {
-                console.error('Error guardando sesión:', err);
-                return res.status(500).json({ success: false, message: 'Error al iniciar sesión.' });
-            }
-            res.status(200).json({ 
-                success: true, 
-                message: 'Inicio de sesión exitoso.',
-                user: req.session.user 
-            });
+            if (err) return res.status(500).json({ success: false, message: 'Error sesión.' });
+            res.status(200).json({ success: true, message: 'Bienvenido.', user: req.session.user });
         });
 
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, message: 'Error interno del servidor.' });
+        res.status(500).json({ success: false, message: 'Error interno.' });
+    } finally {
+        if (connection) connection.release();
+    }
+};
+
+const loginMobile = async (req, res) => {
+    const { boleta, password } = req.body;
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        const [rows] = await connection.query(
+            `SELECT p.id_perfil_alumno, p.nombres, p.apellido_paterno, p.grupo, p.imagen_url,
+                u.id_usuario, u.contrasena_hash, u.esta_activo
+            FROM perfil_alumno p
+            JOIN usuarios u ON p.id_usuario_fk = u.id_usuario
+            WHERE p.boleta = ?`, [boleta]
+        );
+
+        if (rows.length === 0) return res.status(401).json({ success: false, message: 'Boleta no encontrada.' });
+        
+        const alumno = rows[0];
+        if (!alumno.esta_activo) return res.status(403).json({ success: false, message: 'Cuenta desactivada.' });
+
+        const isMatch = await bcrypt.compare(password, alumno.contrasena_hash);
+        if (!isMatch) return res.status(401).json({ success: false, message: 'Contraseña incorrecta.' });
+
+        const sessionToken = crypto.randomBytes(32).toString('hex');
+        await connection.query('UPDATE usuarios SET token_sesion_actual = ? WHERE id_usuario = ?', [sessionToken, alumno.id_usuario]);
+
+        const userData = {
+            id_usuario: alumno.id_usuario,
+            id_perfil: alumno.id_perfil_alumno,
+            nombres: alumno.nombres,
+            apellidos: alumno.apellido_paterno,
+            grupo: alumno.grupo,
+            foto: alumno.imagen_url,
+            token: sessionToken
+        };
+
+        res.status(200).json({ success: true, message: 'Bienvenido', data: userData });
+
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error interno.' });
+    } finally {
+        if (connection) connection.release();
+    }
+};
+
+const loginPhone = async (req, res) => {
+    const { idToken } = req.body; 
+    if (!idToken) return res.status(400).json({ success: false, message: 'Falta token.' });
+
+    let connection;
+    try {
+        const decodedToken = await firebaseAdmin.auth().verifyIdToken(idToken);
+        const phoneNumber = decodedToken.phone_number; 
+        const telefonoLimpio = phoneNumber.slice(-10); 
+
+        connection = await pool.getConnection();
+        const [rows] = await connection.query(
+            `SELECT p.id_perfil_alumno, p.nombres, p.apellido_paterno, p.grupo, p.imagen_url,
+                u.id_usuario, u.esta_activo
+            FROM usuarios u
+            JOIN perfil_alumno p ON u.id_usuario = p.id_usuario_fk
+            WHERE u.telefono LIKE ? AND u.rol = 'alumno'`,
+            [`%${telefonoLimpio}`]
+        );
+
+        if (rows.length === 0) return res.status(404).json({ success: false, message: 'Teléfono no registrado.' });
+
+        const alumno = rows[0];
+        if (!alumno.esta_activo) return res.status(403).json({ success: false, message: 'Cuenta desactivada.' });
+
+        const sessionToken = crypto.randomBytes(32).toString('hex');
+        await connection.query('UPDATE usuarios SET token_sesion_actual = ? WHERE id_usuario = ?', [sessionToken, alumno.id_usuario]);
+
+        const userData = {
+            id_usuario: alumno.id_usuario,
+            id_perfil: alumno.id_perfil_alumno,
+            nombres: alumno.nombres,
+            apellidos: alumno.apellido_paterno,
+            grupo: alumno.grupo,
+            foto: alumno.imagen_url,
+            token: sessionToken
+        };
+
+        res.status(200).json({ success: true, message: 'Bienvenido', data: userData });
+
+    } catch (error) {
+        res.status(401).json({ success: false, message: 'Error de autenticación.' });
     } finally {
         if (connection) connection.release();
     }
@@ -68,31 +143,17 @@ const login = async (req, res) => {
 
 const verificar = (req, res) => {
     if (req.session.user) {
-        return res.json({
-            success: true,
-            autenticado: true,
-            tipo: req.session.user.rol,
-            usuario: req.session.user
-        });
-    } else {
-        return res.json({
-            success: true,
-            autenticado: false
-        });
+        return res.json({ success: true, autenticado: true, tipo: req.session.user.rol, usuario: req.session.user });
     }
+    return res.json({ success: true, autenticado: false });
 };
 
-// --- Logout ---
 const logout = (req, res) => {
-    req.session.destroy((err) => {
-        if (err) {
-            return res.status(500).json({ success: false, message: 'Error al cerrar sesión.' });
-        }
+    req.session.destroy(() => {
         res.clearCookie('sid_escolar'); 
-        res.json({ success: true, message: 'Sesión cerrada.' });
+        res.json({ success: true });
     });
 };
-
 
 const registerAdmin = async (req, res) => {
     const { nombre_completo, correo_electronico, telefono, contrasena } = req.body;
@@ -165,7 +226,7 @@ const forgotPassword = async (req, res) => {
             [user.id_usuario, tokenHash, expira]
         );
 
-        const resetLink = `http://localhost:1000/reset-password?token=${token}`;
+        const resetLink = `http://localhost:1200/reset-password?token=${token}`;
         const emailHtml = `<p>Para restablecer tu contraseña, haz clic aquí:</p><a href="${resetLink}">${resetLink}</a>`;
 
         await sendEmail(correo_electronico, 'Recuperar Contraseña', emailHtml);
@@ -173,7 +234,6 @@ const forgotPassword = async (req, res) => {
         res.status(200).json({ success: true, message: 'Si existe una cuenta, se enviará un correo.' });
 
     } catch (error) {
-        console.error(error);
         res.status(500).json({ success: false, message: 'Error interno.' });
     } finally {
         if (connection) connection.release();
@@ -227,6 +287,8 @@ const resetPassword = async (req, res) => {
 
 module.exports = {
     login,
+    loginMobile,
+    loginPhone,
     verificar,
     logout,
     registerAdmin,

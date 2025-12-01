@@ -9,7 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
         !currentPath.includes('/tutores') && 
         !currentPath.includes('/historial') &&
         !currentPath.includes('/announcements') &&
-        !currentPath.includes('/scanQR') 
+        !currentPath.includes('/scanQR') &&
+        !currentPath.includes('/grupos') &&
+        !currentPath.includes('/reportes')
     );
 
     if (isLoginPage) return;
@@ -26,7 +28,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.location.href = '/index.html';
             }
         } catch (error) {
-            console.error('Error de sesión:', error);
             window.location.href = '/index.html';
         }
     }
@@ -45,8 +46,10 @@ document.addEventListener('DOMContentLoaded', () => {
             <nav class="header-nav">
                 <a href="/dashboard/index.html" class="${active('dashboard')}">Dashboard</a>
                 <a href="/alumnos/index.html" class="${active('alumnos')}">Alumnos</a>
+                <a href="/grupos/index.html" class="${active('grupos')}">Grupos</a>
                 <a href="/tutores/index.html" class="${active('tutores')}">Tutores</a>
                 <a href="/historial/index.html" class="${active('historial')}">Historial</a>
+                <a href="/reportes/index.html" class="${active('reportes')}">Reportes</a>
                 <a href="/announcements/index.html" class="${active('announcements')}">Anuncios</a>
             </nav>
 
@@ -97,6 +100,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentTheme === 'dark' && switcher) {
             document.body.classList.add('dark-theme');
             switcher.classList.add('switcher--dark');
+        } else {
+            document.body.classList.remove('dark-theme');
+            if(switcher) switcher.classList.remove('switcher--dark');
         }
     }
 

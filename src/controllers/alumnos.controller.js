@@ -176,6 +176,26 @@ const deleteAlumno = async (req, res) => {
     }
 };
 
+const generarPasswordTemporal = (nombres, paterno, materno, fecha, boleta) => {
+    try {
+        const initials = (
+            (nombres.split(' ').map(n => n[0]).join('')) +
+            (paterno ? paterno[0] : '') +
+            (materno ? materno[0] : '')
+        ).toUpperCase();
+
+        const dateObj = new Date(fecha);
+        const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+        const year = dateObj.getFullYear().toString().slice(-2);
+        
+        const boletaSuffix = boleta.toString().slice(-4);
+
+        return `${initials}${month}${year}${boletaSuffix}`;
+    } catch (e) {
+        return 'Temporal123';
+    }
+};
+
 const registerAlumnosMasivo = async (req, res) => {
     if (!req.file) return res.status(400).json({ success: false, message: 'Falta archivo.' });
 
@@ -194,15 +214,23 @@ const registerAlumnosMasivo = async (req, res) => {
                 let count = 0;
                 
                 for (const [index, alumno] of alumnos.entries()) {
-                    const { 
+                    let { 
                         correo_electronico, telefono, contrasena,
                         nombres, apellido_paterno, apellido_materno, fecha_nacimiento,
                         curp, boleta, nss, tipo_sangre, grado, grupo
                     } = alumno;
 
-                    if (!correo_electronico || !contrasena || !nombres || !apellido_paterno || !curp || !boleta) {
-                        processingErrors.push({ fila: index + 2, error: 'Faltan campos obligatorios.' });
+                    if (!correo_electronico || !nombres || !apellido_paterno || !curp || !boleta) {
+                        processingErrors.push({ fila: index + 2, error: 'Faltan datos obligatorios.' });
                         continue;
+                    }
+
+                    if (!contrasena) {
+                        if (!fecha_nacimiento) {
+                            processingErrors.push({ fila: index + 2, error: 'Sin contraseña y sin fecha de nacimiento para generarla.' });
+                            continue;
+                        }
+                        contrasena = generarPasswordTemporal(nombres, apellido_paterno, apellido_materno, fecha_nacimiento, boleta);
                     }
 
                     try {
@@ -225,7 +253,7 @@ const registerAlumnosMasivo = async (req, res) => {
                     } catch (error) {
                         await connection.rollback();
                         let msg = 'Error BD';
-                        if (error.code === 'ER_DUP_ENTRY') msg = 'Datos duplicados (Boleta/CURP/Email)';
+                        if (error.code === 'ER_DUP_ENTRY') msg = 'Boleta, CURP o Correo duplicado';
                         processingErrors.push({ fila: index + 2, data: alumno, error: msg });
                     }
                 }
@@ -237,7 +265,7 @@ const registerAlumnosMasivo = async (req, res) => {
                 });
 
             } catch (error) {
-                res.status(500).json({ success: false, message: 'Error en carga masiva.' });
+                res.status(500).json({ success: false, message: 'Error masivo.' });
             } finally {
                 if (connection) connection.release();
             }
