@@ -101,39 +101,58 @@ const loginMobile = async (req, res) => {
 };
 
 const sendEmailCode = async (req, res) => {
-    const idUsuario = req.user.id_usuario; 
+    console.log('📧 [DEBUG] Iniciando proceso de envío de código...');
     
+    if (!req.user || !req.user.id_usuario) {
+        console.error('[DEBUG] Error: req.user no existe. El middleware de auth falló o el token no es válido.');
+        return res.status(401).json({ success: false, message: 'No autorizado (Token inválido).' });
+    }
+
+    const idUsuario = req.user.id_usuario;
+    console.log('   > Usuario ID:', idUsuario);
+
     let connection;
     try {
         connection = await pool.getConnection();
+        
+        console.log('   > Buscando correo en BD...');
         const [user] = await connection.query('SELECT correo_electronico FROM usuarios WHERE id_usuario = ?', [idUsuario]);
         
-        if(user.length === 0) return res.status(404).json({success: false, message: 'Usuario no encontrado'});
+        if(user.length === 0) {
+            console.error('❌ [DEBUG] Usuario no encontrado en BD.');
+            return res.status(404).json({success: false, message: 'Usuario no encontrado'});
+        }
 
         const correo = user[0].correo_electronico;
+        console.log('   > Correo destino:', correo);
+
         const codigo = Math.floor(100000 + Math.random() * 900000).toString();
-
-        await connection.query('UPDATE usuarios SET codigo_verificacion_email = ? WHERE id_usuario = ?', [codigo, idUsuario]);
-
-        const html = `
-            <h3>Verificación de Cuenta</h3>
-            <p>Tu código de verificación es:</p>
-            <h1 style="color: #5865F2; letter-spacing: 5px;">${codigo}</h1>
-            <p>Ingrésalo en la aplicación para continuar.</p>
-        `;
-
-        await sendEmail(correo, 'Código de Verificación - Unnamed', html);
         
+        console.log('   > Guardando código en BD...');
+        await connection.query('UPDATE usuarios SET codigo_verificacion_email = ? WHERE id_usuario = ?', [codigo, idUsuario]);
+        
+        console.log('   > Conectando con SMTP...');
+        const html = `<h3>Verificación</h3><p>Tu código es:</p><h1 style="color:#5865F2">${codigo}</h1>`;
+        const emailResult = await sendEmail(correo, 'Código de Verificación - Unnamed', html);
+
+        if (!emailResult.success) {
+            console.error('[DEBUG] Falló el envío SMTP:', emailResult);
+            throw new Error('Fallo SMTP');
+        }
+
+        console.log('[DEBUG] Correo enviado exitosamente.');
         res.status(200).json({ success: true, message: 'Código enviado al correo.' });
 
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Error al enviar código.' });
+        console.error('🔥 [EXCEPCIÓN EN sendEmailCode]:', error); 
+        res.status(500).json({ success: false, message: 'Error al enviar código. Revisa consola del servidor.' });
     } finally {
         if (connection) connection.release();
     }
 };
 
 const verifyEmailCode = async (req, res) => {
+    console.log('🔑 [DEBUG] Verificando código...');
     const idUsuario = req.user.id_usuario;
     const { code } = req.body;
 
@@ -142,25 +161,24 @@ const verifyEmailCode = async (req, res) => {
     let connection;
     try {
         connection = await pool.getConnection();
-        const [user] = await connection.query(
-            'SELECT codigo_verificacion_email FROM usuarios WHERE id_usuario = ?', 
-            [idUsuario]
-        );
+        const [user] = await connection.query('SELECT codigo_verificacion_email FROM usuarios WHERE id_usuario = ?', [idUsuario]);
 
         if(user.length === 0) return res.status(404).json({success: false, message: 'Usuario no encontrado'});
 
+        console.log(`   > Código BD: ${user[0].codigo_verificacion_email} vs Recibido: ${code}`);
+
         if(user[0].codigo_verificacion_email !== code) {
+            console.log('[DEBUG] Código incorrecto.');
             return res.status(400).json({ success: false, message: 'Código incorrecto.' });
         }
 
-        await connection.query(
-            'UPDATE usuarios SET email_verificado = 1, codigo_verificacion_email = NULL WHERE id_usuario = ?',
-            [idUsuario]
-        );
+        await connection.query('UPDATE usuarios SET email_verificado = 1, codigo_verificacion_email = NULL WHERE id_usuario = ?', [idUsuario]);
+        console.log('[DEBUG] Verificado correctamente.');
 
         res.status(200).json({ success: true, message: 'Correo verificado correctamente.' });
 
     } catch (error) {
+        console.error('🔥 [EXCEPCIÓN EN verifyEmailCode]:', error);
         res.status(500).json({ success: false, message: 'Error interno.' });
     } finally {
         if (connection) connection.release();
