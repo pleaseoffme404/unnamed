@@ -53,11 +53,13 @@ const login = async (req, res) => {
 
 const loginMobile = async (req, res) => {
     const { boleta, password } = req.body;
+    console.log(`Login Móvil: ${boleta}`);
+
     let connection;
     try {
         connection = await pool.getConnection();
         const [rows] = await connection.query(
-            `SELECT p.id_perfil_alumno, p.nombres, p.apellido_paterno, p.grupo, p.imagen_url,
+            `SELECT p.id_perfil_alumno, p.nombres, p.apellido_paterno, p.grupo, p.imagen_url, p.boleta,
                 u.id_usuario, u.contrasena_hash, u.rol, u.esta_activo,
                 u.email_verificado, u.telefono_verificado, u.correo_electronico
             FROM perfil_alumno p
@@ -82,6 +84,7 @@ const loginMobile = async (req, res) => {
             nombres: alumno.nombres,
             apellidos: alumno.apellido_paterno,
             grupo: alumno.grupo,
+            boleta: alumno.boleta, 
             foto: alumno.imagen_url,
             email_registrado: alumno.correo_electronico, 
             verificaciones: {
@@ -94,6 +97,7 @@ const loginMobile = async (req, res) => {
         res.status(200).json({ success: true, message: 'Bienvenido', data: userData });
 
     } catch (error) {
+        console.error(error);
         res.status(500).json({ success: false, message: 'Error interno.' });
     } finally {
         if (connection) connection.release();
@@ -101,84 +105,78 @@ const loginMobile = async (req, res) => {
 };
 
 const sendEmailCode = async (req, res) => {
-    console.log('📧 [DEBUG] Iniciando proceso de envío de código...');
+    const idUsuario = req.user ? req.user.id_usuario : null;
     
-    if (!req.user || !req.user.id_usuario) {
-        console.error('[DEBUG] Error: req.user no existe. El middleware de auth falló o el token no es válido.');
-        return res.status(401).json({ success: false, message: 'No autorizado (Token inválido).' });
-    }
+    console.log(`[EMAIL] Enviando código a usuario ID: ${idUsuario}`);
 
-    const idUsuario = req.user.id_usuario;
-    console.log('   > Usuario ID:', idUsuario);
+    if (!idUsuario) return res.status(401).json({ success: false, message: 'Usuario no identificado.' });
 
     let connection;
     try {
         connection = await pool.getConnection();
-        
-        console.log('   > Buscando correo en BD...');
         const [user] = await connection.query('SELECT correo_electronico FROM usuarios WHERE id_usuario = ?', [idUsuario]);
         
-        if(user.length === 0) {
-            console.error('❌ [DEBUG] Usuario no encontrado en BD.');
-            return res.status(404).json({success: false, message: 'Usuario no encontrado'});
-        }
+        if(user.length === 0) return res.status(404).json({success: false, message: 'Usuario no encontrado'});
 
         const correo = user[0].correo_electronico;
-        console.log('   > Correo destino:', correo);
-
         const codigo = Math.floor(100000 + Math.random() * 900000).toString();
-        
-        console.log('   > Guardando código en BD...');
+
         await connection.query('UPDATE usuarios SET codigo_verificacion_email = ? WHERE id_usuario = ?', [codigo, idUsuario]);
+
+        const html = `
+            <h3>Verificación de Cuenta</h3>
+            <p>Tu código de verificación es:</p>
+            <h1 style="color: #5865F2; letter-spacing: 5px;">${codigo}</h1>
+            <p>Ingrésalo en la aplicación para continuar.</p>
+        `;
+
+        await sendEmail(correo, 'Código de Verificación', html);
         
-        console.log('   > Conectando con SMTP...');
-        const html = `<h3>Verificación</h3><p>Tu código es:</p><h1 style="color:#5865F2">${codigo}</h1>`;
-        const emailResult = await sendEmail(correo, 'Código de Verificación - Unnamed', html);
-
-        if (!emailResult.success) {
-            console.error('[DEBUG] Falló el envío SMTP:', emailResult);
-            throw new Error('Fallo SMTP');
-        }
-
-        console.log('[DEBUG] Correo enviado exitosamente.');
+        console.log('   > Código enviado.');
         res.status(200).json({ success: true, message: 'Código enviado al correo.' });
 
     } catch (error) {
-        console.error('🔥 [EXCEPCIÓN EN sendEmailCode]:', error); 
-        res.status(500).json({ success: false, message: 'Error al enviar código. Revisa consola del servidor.' });
+        console.error('Error envío:', error);
+        res.status(500).json({ success: false, message: 'Error al enviar código.' });
     } finally {
         if (connection) connection.release();
     }
 };
 
 const verifyEmailCode = async (req, res) => {
-    console.log('🔑 [DEBUG] Verificando código...');
-    const idUsuario = req.user.id_usuario;
+    const idUsuario = req.user ? req.user.id_usuario : null;
     const { code } = req.body;
 
+    console.log(`🔑 [EMAIL] Verificando código para usuario ID: ${idUsuario}`);
+
     if(!code) return res.status(400).json({success: false, message: 'Código requerido'});
+    if (!idUsuario) return res.status(401).json({ success: false, message: 'Usuario no identificado.' });
 
     let connection;
     try {
         connection = await pool.getConnection();
-        const [user] = await connection.query('SELECT codigo_verificacion_email FROM usuarios WHERE id_usuario = ?', [idUsuario]);
+        const [user] = await connection.query(
+            'SELECT codigo_verificacion_email FROM usuarios WHERE id_usuario = ?', 
+            [idUsuario]
+        );
 
         if(user.length === 0) return res.status(404).json({success: false, message: 'Usuario no encontrado'});
 
-        console.log(`   > Código BD: ${user[0].codigo_verificacion_email} vs Recibido: ${code}`);
-
         if(user[0].codigo_verificacion_email !== code) {
-            console.log('[DEBUG] Código incorrecto.');
+            console.log('  Código incorrecto.');
             return res.status(400).json({ success: false, message: 'Código incorrecto.' });
         }
 
-        await connection.query('UPDATE usuarios SET email_verificado = 1, codigo_verificacion_email = NULL WHERE id_usuario = ?', [idUsuario]);
-        console.log('[DEBUG] Verificado correctamente.');
+        await connection.query(
+            'UPDATE usuarios SET email_verificado = 1, codigo_verificacion_email = NULL WHERE id_usuario = ?',
+            [idUsuario]
+        );
 
+        console.log(' Correo verificado.');
         res.status(200).json({ success: true, message: 'Correo verificado correctamente.' });
 
     } catch (error) {
-        console.error('🔥 [EXCEPCIÓN EN verifyEmailCode]:', error);
+        console.error(' Error verificación:', error);
         res.status(500).json({ success: false, message: 'Error interno.' });
     } finally {
         if (connection) connection.release();
@@ -197,7 +195,7 @@ const loginPhone = async (req, res) => {
 
         connection = await pool.getConnection();
         const [rows] = await connection.query(
-            `SELECT p.id_perfil_alumno, p.nombres, p.apellido_paterno, p.grupo, p.imagen_url,
+            `SELECT p.id_perfil_alumno, p.nombres, p.apellido_paterno, p.grupo, p.imagen_url, p.boleta,
                 u.id_usuario, u.esta_activo
             FROM usuarios u
             JOIN perfil_alumno p ON u.id_usuario = p.id_usuario_fk
@@ -211,7 +209,6 @@ const loginPhone = async (req, res) => {
         if (!alumno.esta_activo) return res.status(403).json({ success: false, message: 'Cuenta desactivada.' });
 
         const sessionToken = crypto.randomBytes(32).toString('hex');
-        
         await connection.query(
             'UPDATE usuarios SET token_sesion_actual = ?, telefono_verificado = 1 WHERE id_usuario = ?', 
             [sessionToken, alumno.id_usuario]
@@ -223,6 +220,7 @@ const loginPhone = async (req, res) => {
             nombres: alumno.nombres,
             apellidos: alumno.apellido_paterno,
             grupo: alumno.grupo,
+            boleta: alumno.boleta, 
             foto: alumno.imagen_url,
             token: sessionToken
         };
