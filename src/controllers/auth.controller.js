@@ -23,13 +23,13 @@ const login = async (req, res) => {
             [correo]
         );
 
-        if (rows.length === 0) return res.status(401).json({ success: false, message: 'Credenciales invalidas.' });
+        if (rows.length === 0) return res.status(401).json({ success: false, message: 'Credenciales inválidas.' });
 
         const user = rows[0];
         if (user.rol !== 'admin') return res.status(403).json({ success: false, message: 'Acceso denegado.' });
 
         const isMatch = await bcrypt.compare(password, user.contrasena_hash);
-        if (!isMatch) return res.status(401).json({ success: false, message: 'Credenciales invalidas.' });
+        if (!isMatch) return res.status(401).json({ success: false, message: 'Credenciales inválidas.' });
 
         req.session.user = {
             id: user.id_usuario,
@@ -40,7 +40,7 @@ const login = async (req, res) => {
         };
 
         req.session.save(err => {
-            if (err) return res.status(500).json({ success: false, message: 'Error sesion.' });
+            if (err) return res.status(500).json({ success: false, message: 'Error sesión.' });
             res.status(200).json({ success: true, message: 'Bienvenido.', user: req.session.user });
         });
 
@@ -53,47 +53,28 @@ const login = async (req, res) => {
 
 const loginMobile = async (req, res) => {
     const { boleta, password } = req.body;
-    console.log(`Login Movil Intento: Boleta=${boleta}`);
-
     let connection;
     try {
         connection = await pool.getConnection();
-        
-        console.log('Buscando usuario en BD...');
         const [rows] = await connection.query(
             `SELECT p.id_perfil_alumno, p.nombres, p.apellido_paterno, p.grupo, p.imagen_url,
-                u.id_usuario, u.contrasena_hash, u.rol, u.esta_activo
+                u.id_usuario, u.contrasena_hash, u.rol, u.esta_activo,
+                u.email_verificado, u.telefono_verificado, u.correo_electronico
             FROM perfil_alumno p
             JOIN usuarios u ON p.id_usuario_fk = u.id_usuario
             WHERE p.boleta = ?`, [boleta]
         );
 
-        if (rows.length === 0) {
-            console.log('Login Movil Fallido: Boleta no existe en BD');
-            return res.status(401).json({ success: false, message: 'Boleta no encontrada.' });
-        }
+        if (rows.length === 0) return res.status(401).json({ success: false, message: 'Boleta no encontrada.' });
 
         const alumno = rows[0];
-        console.log(`Usuario encontrado: ${alumno.nombres} (ID: ${alumno.id_usuario})`);
+        if (!alumno.esta_activo) return res.status(403).json({ success: false, message: 'Cuenta desactivada.' });
 
-        if (!alumno.esta_activo) {
-            console.log('Login Movil Fallido: Cuenta desactivada');
-            return res.status(403).json({ success: false, message: 'Cuenta desactivada.' });
-        }
-
-        console.log('Verificando contraseña...');
         const isMatch = await bcrypt.compare(password, alumno.contrasena_hash);
-        
-        if (!isMatch) {
-            console.log('Login Movil Fallido: Contraseña incorrecta');
-            return res.status(401).json({ success: false, message: 'Contraseña incorrecta.' });
-        }
+        if (!isMatch) return res.status(401).json({ success: false, message: 'Contraseña incorrecta.' });
 
-        console.log('Contraseña correcta. Generando token...');
         const sessionToken = crypto.randomBytes(32).toString('hex');
-        
         await connection.query('UPDATE usuarios SET token_sesion_actual = ? WHERE id_usuario = ?', [sessionToken, alumno.id_usuario]);
-        console.log('Token guardado en BD.');
 
         const userData = {
             id_usuario: alumno.id_usuario,
@@ -102,14 +83,84 @@ const loginMobile = async (req, res) => {
             apellidos: alumno.apellido_paterno,
             grupo: alumno.grupo,
             foto: alumno.imagen_url,
+            email_registrado: alumno.correo_electronico, 
+            verificaciones: {
+                email: !!alumno.email_verificado,
+                telefono: !!alumno.telefono_verificado
+            },
             token: sessionToken
         };
 
-        console.log('Login completado. Enviando respuesta.');
         res.status(200).json({ success: true, message: 'Bienvenido', data: userData });
 
     } catch (error) {
-        console.error('Excepcion Error en Login Movil:', error);
+        res.status(500).json({ success: false, message: 'Error interno.' });
+    } finally {
+        if (connection) connection.release();
+    }
+};
+
+const sendEmailCode = async (req, res) => {
+    const idUsuario = req.user.id_usuario; 
+    
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        const [user] = await connection.query('SELECT correo_electronico FROM usuarios WHERE id_usuario = ?', [idUsuario]);
+        
+        if(user.length === 0) return res.status(404).json({success: false, message: 'Usuario no encontrado'});
+
+        const correo = user[0].correo_electronico;
+        const codigo = Math.floor(100000 + Math.random() * 900000).toString();
+
+        await connection.query('UPDATE usuarios SET codigo_verificacion_email = ? WHERE id_usuario = ?', [codigo, idUsuario]);
+
+        const html = `
+            <h3>Verificación de Cuenta</h3>
+            <p>Tu código de verificación es:</p>
+            <h1 style="color: #5865F2; letter-spacing: 5px;">${codigo}</h1>
+            <p>Ingrésalo en la aplicación para continuar.</p>
+        `;
+
+        await sendEmail(correo, 'Código de Verificación - Unnamed', html);
+        
+        res.status(200).json({ success: true, message: 'Código enviado al correo.' });
+
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error al enviar código.' });
+    } finally {
+        if (connection) connection.release();
+    }
+};
+
+const verifyEmailCode = async (req, res) => {
+    const idUsuario = req.user.id_usuario;
+    const { code } = req.body;
+
+    if(!code) return res.status(400).json({success: false, message: 'Código requerido'});
+
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        const [user] = await connection.query(
+            'SELECT codigo_verificacion_email FROM usuarios WHERE id_usuario = ?', 
+            [idUsuario]
+        );
+
+        if(user.length === 0) return res.status(404).json({success: false, message: 'Usuario no encontrado'});
+
+        if(user[0].codigo_verificacion_email !== code) {
+            return res.status(400).json({ success: false, message: 'Código incorrecto.' });
+        }
+
+        await connection.query(
+            'UPDATE usuarios SET email_verificado = 1, codigo_verificacion_email = NULL WHERE id_usuario = ?',
+            [idUsuario]
+        );
+
+        res.status(200).json({ success: true, message: 'Correo verificado correctamente.' });
+
+    } catch (error) {
         res.status(500).json({ success: false, message: 'Error interno.' });
     } finally {
         if (connection) connection.release();
@@ -136,13 +187,17 @@ const loginPhone = async (req, res) => {
             [`%${telefonoLimpio}`]
         );
 
-        if (rows.length === 0) return res.status(404).json({ success: false, message: 'Telefono no registrado.' });
+        if (rows.length === 0) return res.status(404).json({ success: false, message: 'Teléfono no registrado.' });
 
         const alumno = rows[0];
         if (!alumno.esta_activo) return res.status(403).json({ success: false, message: 'Cuenta desactivada.' });
 
         const sessionToken = crypto.randomBytes(32).toString('hex');
-        await connection.query('UPDATE usuarios SET token_sesion_actual = ? WHERE id_usuario = ?', [sessionToken, alumno.id_usuario]);
+        
+        await connection.query(
+            'UPDATE usuarios SET token_sesion_actual = ?, telefono_verificado = 1 WHERE id_usuario = ?', 
+            [sessionToken, alumno.id_usuario]
+        );
 
         const userData = {
             id_usuario: alumno.id_usuario,
@@ -157,7 +212,7 @@ const loginPhone = async (req, res) => {
         res.status(200).json({ success: true, message: 'Bienvenido', data: userData });
 
     } catch (error) {
-        res.status(401).json({ success: false, message: 'Error de autenticacion.' });
+        res.status(401).json({ success: false, message: 'Error de autenticación.' });
     } finally {
         if (connection) connection.release();
     }
@@ -217,7 +272,7 @@ const registerAdmin = async (req, res) => {
         if (imageUrl) await deleteImage(imageUrl); 
 
         if (error.code === 'ER_DUP_ENTRY') {
-            return res.status(409).json({ success: false, message: 'El correo o telefono ya existen.' });
+            return res.status(409).json({ success: false, message: 'El correo o teléfono ya existen.' });
         }
         res.status(500).json({ success: false, message: 'Error interno.' });
     } finally {
@@ -234,7 +289,7 @@ const forgotPassword = async (req, res) => {
         const [users] = await connection.query('SELECT id_usuario FROM usuarios WHERE correo_electronico = ?', [correo_electronico]);
 
         if (users.length === 0) {
-            return res.status(200).json({ success: true, message: 'Si existe una cuenta, se enviara un correo.' });
+            return res.status(200).json({ success: true, message: 'Si existe una cuenta, se enviará un correo de recuperación.' });
         }
 
         const user = users[0];
@@ -248,12 +303,13 @@ const forgotPassword = async (req, res) => {
             [user.id_usuario, tokenHash, expira]
         );
 
-        const resetLink = `http://localhost:5173/reset-password?token=${token}`;
-        const emailHtml = `<p>Para restablecer tu contraseña, haz clic aqui:</p><a href="${resetLink}">${resetLink}</a>`;
+        const publicUrl = process.env.PUBLIC_URL || 'https://endware.bullnodes.com';
+        const resetLink = `${publicUrl}/reset-password?token=${token}`;
+        const emailHtml = `<p>Para restablecer tu contraseña, haz clic aquí:</p><a href="${resetLink}">${resetLink}</a>`;
 
         await sendEmail(correo_electronico, 'Recuperar Contraseña', emailHtml);
 
-        res.status(200).json({ success: true, message: 'Si existe una cuenta, se enviara un correo.' });
+        res.status(200).json({ success: true, message: 'Si existe una cuenta, se enviará un correo de recuperación.' });
 
     } catch (error) {
         res.status(500).json({ success: false, message: 'Error interno.' });
@@ -282,7 +338,7 @@ const resetPassword = async (req, res) => {
 
         if (tokens.length === 0) {
             await connection.rollback();
-            return res.status(400).json({ success: false, message: 'Token invalido o expirado.' });
+            return res.status(400).json({ success: false, message: 'Token inválido o expirado.' });
         }
 
         const tokenData = tokens[0];
@@ -311,6 +367,8 @@ module.exports = {
     login,
     loginMobile,
     loginPhone,
+    sendEmailCode,
+    verifyEmailCode,
     verificar,
     logout,
     registerAdmin,

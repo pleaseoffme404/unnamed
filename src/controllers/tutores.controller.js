@@ -79,7 +79,6 @@ const registerTutor = async (req, res) => {
         connection = await pool.getConnection();
         await connection.beginTransaction();
 
-        // Validar límite de alumnos ANTES de crear nada
         if (alumnos) {
             const alumnosIds = Array.isArray(alumnos) ? alumnos : [alumnos];
             for (const alumnoId of alumnosIds) {
@@ -160,10 +159,8 @@ const updateTutor = async (req, res) => {
         }
         const id_usuario = rows[0].id_usuario_fk;
 
-        // Primero borramos relaciones viejas para poder validar correctamente los cupos
         await connection.query('DELETE FROM alumnos_tutores WHERE id_perfil_tutor_fk = ?', [id]);
 
-        // Validamos cupos
         if (alumnos) {
             const alumnosIds = Array.isArray(alumnos) ? alumnos : [alumnos];
             for (const alumnoId of alumnosIds) {
@@ -279,7 +276,6 @@ const registerTutoresMasivo = async (req, res) => {
                             const [alumnos] = await connection.query('SELECT id_perfil_alumno FROM perfil_alumno WHERE boleta = ?', [boleta_alumno]);
                             if (alumnos.length > 0) {
                                 idAlumno = alumnos[0].id_perfil_alumno;
-                                // VALIDACIÓN DE CUPO MASIVA
                                 const [count] = await connection.query(
                                     'SELECT COUNT(*) as total FROM alumnos_tutores WHERE id_perfil_alumno_fk = ?',
                                     [idAlumno]

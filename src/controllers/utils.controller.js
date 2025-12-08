@@ -1,5 +1,8 @@
 const fs = require('fs').promises;
 const path = require('path');
+require('dotenv').config();
+
+const PUBLIC_URL = process.env.PUBLIC_URL || 'https://endware.bullnodes.com';
 
 function slugify(text) {
     if (!text) return '';
@@ -21,20 +24,25 @@ const saveImage = async (file, folder, name) => {
     try {
         await fs.mkdir(saveDir, { recursive: true });
     } catch (e) {
-        console.error("Error al crear directorio", e);
+        console.error(e);
     }
 
     const savePath = path.join(saveDir, filename);
-    
     await fs.writeFile(savePath, file.buffer);
     
-    return `/assets/img/${folder}/${filename}`;
+    return `${PUBLIC_URL}/assets/img/${folder}/${filename}`;
 };
 
 const deleteImage = async (imageUrl) => {
     if (!imageUrl) return;
+    
+    let relativePath = imageUrl;
+    if (imageUrl.startsWith('http')) {
+        relativePath = imageUrl.replace(PUBLIC_URL, '');
+    }
+
     try {
-        const filePath = path.join(__dirname, '..', '..', 'public', imageUrl);
+        const filePath = path.join(__dirname, '..', '..', 'public', relativePath);
         await fs.unlink(filePath);
     } catch (err) {
         

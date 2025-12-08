@@ -142,3 +142,8 @@ VALUES (
     'Administrador Principal'
 );
 ALTER TABLE usuarios ADD COLUMN token_sesion_actual VARCHAR(255) NULL;
+
+ALTER TABLE usuarios 
+ADD COLUMN email_verificado BOOLEAN DEFAULT FALSE,
+ADD COLUMN telefono_verificado BOOLEAN DEFAULT FALSE,
+ADD COLUMN codigo_verificacion_email VARCHAR(6) NULL;
