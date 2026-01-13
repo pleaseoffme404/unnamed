@@ -143,6 +143,7 @@ input:focus, select:focus, textarea:focus {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
+    padding: 20px;
 }
 
 .login-container {
@@ -212,4 +213,29 @@ input:focus, select:focus, textarea:focus {
 
 .switcher--dark .switcher__moon {
     transform: translateX(-8px);
+}
+
+@media (max-width: 520px) {
+    .login-container {
+        padding: 24px 20px;
+        width: 100%;
+        max-width: 100%;
+    }
+    
+    .theme-switch-wrapper {
+        top: 15px;
+        right: 15px;
+    }
+    
+    input[type="text"],
+    input[type="email"],
+    input[type="password"] {
+        font-size: 16px;
+        padding: 12px;
+    }
+
+    .btn {
+        width: 100%;
+        padding: 12px;
+    }
 }

@@ -43,12 +43,14 @@
     border-radius: 8px;
     overflow: hidden;
     box-shadow: var(--shadow-sm);
+    width: 100%;
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
     font-size: 14px;
+    min-width: 600px;
 }
 
 thead {
@@ -136,6 +138,22 @@ body.dark-theme tbody tr:hover {
 }
 
 @media (max-width: 768px) {
-    .toolbar { flex-direction: column; }
-    .table-wrapper { overflow-x: auto; }
+    .page-content {
+        margin: 15px auto;
+        padding: 0 15px;
+    }
+
+    .toolbar { 
+        flex-direction: column; 
+    }
+
+    .search-container {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .table-wrapper { 
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
 }

@@ -11,6 +11,7 @@
     top: 0;
     z-index: 100;
     box-shadow: var(--shadow-sm);
+    transition: height 0.3s ease;
 }
 
 .header-left {
@@ -43,6 +44,7 @@
     border-radius: 4px;
     transition: all 0.2s ease;
     font-family: 'Raleway', sans-serif;
+    white-space: nowrap;
 }
 
 .header-nav a:hover {
@@ -76,6 +78,7 @@
     font-weight: 600;
     text-decoration: none;
     transition: background-color 0.2s;
+    white-space: nowrap;
 }
 .btn-nav-qr:hover {
     background-color: var(--accent-hover);
@@ -126,6 +129,50 @@
 .switcher--dark .switcher__sun { transform: scale(0.6); }
 .switcher--dark .switcher__moon { transform: translateX(-8px); }
 
-@media (max-width: 1000px) {
-    .header-nav { display: none; } 
+@media (max-width: 900px) {
+    .main-header {
+        height: auto;
+        flex-wrap: wrap;
+        padding: 10px 15px;
+        gap: 10px;
+    }
+
+    .header-left {
+        min-width: auto;
+        order: 1;
+    }
+
+    .header-right {
+        min-width: auto;
+        justify-content: flex-end;
+        flex: 1;
+        order: 2;
+        gap: 10px;
+    }
+
+    .header-nav {
+        order: 3;
+        width: 100%;
+        overflow-x: auto;
+        padding-bottom: 5px;
+        -webkit-overflow-scrolling: touch;
+        justify-content: flex-start;
+    }
+
+    .header-nav::-webkit-scrollbar {
+        height: 0px;
+        background: transparent;
+    }
+
+    #admin-username {
+        display: none;
+    }
+    
+    .btn-nav-qr span {
+        display: none; 
+    }
+    
+    .btn-nav-qr {
+        padding: 8px;
+    }
 }

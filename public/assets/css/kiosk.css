@@ -46,6 +46,7 @@ body {
     align-items: center;
     padding: 40px;
     background-color: var(--bg-app);
+    position: relative;
 }
 
 .qr-wrapper {
@@ -174,7 +175,6 @@ body {
     color: var(--text-primary);
 }
 
-/* VEHICULO */
 .vehicle-card {
     background: var(--bg-panel);
     border: 2px solid var(--accent-primary);
@@ -228,3 +228,71 @@ body {
     align-items: center;
 }
 #reauth-modal.active { display: flex; }
+
+@media (max-width: 1024px) {
+    body {
+        overflow: auto; 
+    }
+
+    .kiosk-split-layout {
+        flex-direction: column;
+        height: auto;
+        min-height: calc(100vh - 60px);
+    }
+
+    .qr-column {
+        padding: 30px 20px;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        min-height: 400px;
+    }
+
+    .info-column {
+        padding: 30px 20px;
+    }
+
+    .info-state {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 600px) {
+    .qr-box {
+        padding: 20px;
+    }
+    
+    .header-clock-display {
+        font-size: 18px;
+    }
+
+    .details-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .vehicle-card {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .vehicle-info strong {
+        margin-bottom: 8px;
+    }
+
+    .status-display {
+        flex-direction: column;
+        gap: 5px;
+        text-align: center;
+    }
+
+    .status-text {
+        font-size: 20px;
+    }
+
+    .debug-simulator {
+        flex-direction: column;
+    }
+
+    .debug-simulator button {
+        width: 100%;
+    }
+}
