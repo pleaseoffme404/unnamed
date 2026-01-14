@@ -61,7 +61,24 @@ const isAdmin = (req, res, next) => {
     return res.status(403).json({ success: false, message: 'Requiere permisos de administrador.' });
 };
 
+const isTutor = (req, res, next) => {
+    if (req.session && req.session.rol === 'tutor') {
+        return next();
+    }
+
+    if (req.session && req.session.user && req.session.user.rol === 'tutor') {
+        return next();
+    }
+
+    if (req.user && req.user.rol === 'tutor') {
+        return next();
+    }
+
+    return res.status(403).json({ success: false, message: 'Acceso denegado. Se requiere rol de Tutor.' });
+};
+
 module.exports = {
     isAuthenticated,
+    isTutor,
     isAdmin
 };

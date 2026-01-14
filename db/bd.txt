@@ -1,149 +1,154 @@
-DROP DATABASE IF EXISTS `asistencia_escolar`;
-CREATE DATABASE `asistencia_escolar`;
-USE `asistencia_escolar`;
+DROP DATABASE IF EXISTS asistencia_escolar;
+CREATE DATABASE asistencia_escolar;
+USE asistencia_escolar;
 
-CREATE TABLE `usuarios` (
-    `id_usuario` INT AUTO_INCREMENT PRIMARY KEY,
-    `correo_electronico` VARCHAR(255) NOT NULL UNIQUE,
-    `contrasena_hash` VARCHAR(255) NOT NULL,
-    `telefono` VARCHAR(20) UNIQUE,
-    `rol` ENUM('admin', 'alumno', 'tutor') NOT NULL,
-    `esta_activo` BOOLEAN DEFAULT true,
-    `fecha_creacion` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE usuarios (
+    id_usuario INT AUTO_INCREMENT PRIMARY KEY,
+    correo_electronico VARCHAR(255) NOT NULL UNIQUE,
+    contrasena_hash VARCHAR(255) NOT NULL,
+    telefono VARCHAR(20) UNIQUE,
+    rol ENUM('admin', 'alumno', 'tutor') NOT NULL,
+    esta_activo BOOLEAN DEFAULT true,
+    token_sesion_actual VARCHAR(255) NULL,
+    email_verificado BOOLEAN DEFAULT FALSE,
+    telefono_verificado BOOLEAN DEFAULT FALSE,
+    codigo_verificacion_email VARCHAR(6) NULL,
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE `grupos_disponibles` (
-    `id_grupo_disponible` INT AUTO_INCREMENT PRIMARY KEY,
-    `grado` INT NOT NULL,
-    `grupo` VARCHAR(10) NOT NULL,
-    `hora_entrada` TIME NOT NULL DEFAULT '07:00:00',
-    `hora_salida` TIME NOT NULL DEFAULT '14:00:00',
-    UNIQUE(`grado`, `grupo`)
+CREATE TABLE sessions (
+    session_id varchar(128) COLLATE utf8mb4_bin NOT NULL,
+    expires int(11) unsigned NOT NULL,
+    data mediumtext COLLATE utf8mb4_bin,
+    PRIMARY KEY (session_id)
 );
 
-CREATE TABLE `perfil_admin` (
-    `id_perfil_admin` INT AUTO_INCREMENT PRIMARY KEY,
-    `id_usuario_fk` INT NOT NULL UNIQUE,
-    `nombre_completo` VARCHAR(255) NOT NULL,
-    `imagen_url` VARCHAR(255) NULL,
-    FOREIGN KEY (`id_usuario_fk`) REFERENCES `usuarios`(`id_usuario`) ON DELETE CASCADE
+CREATE TABLE grupos_disponibles (
+    id_grupo_disponible INT AUTO_INCREMENT PRIMARY KEY,
+    grado INT NOT NULL,
+    grupo VARCHAR(10) NOT NULL,
+    hora_entrada TIME NOT NULL DEFAULT '07:00:00',
+    hora_salida TIME NOT NULL DEFAULT '14:00:00',
+    UNIQUE(grado, grupo)
 );
 
-CREATE TABLE `perfil_alumno` (
-    `id_perfil_alumno` INT AUTO_INCREMENT PRIMARY KEY,
-    `id_usuario_fk` INT NOT NULL UNIQUE,
-    `boleta` VARCHAR(10) NOT NULL UNIQUE,
-    `nombres` VARCHAR(150) NOT NULL,
-    `apellido_paterno` VARCHAR(100) NOT NULL,
-    `apellido_materno` VARCHAR(100),
-    `fecha_nacimiento` DATE,
-    `curp` VARCHAR(18) NOT NULL UNIQUE,
-    `nss` VARCHAR(20) UNIQUE,
-    `tipo_sangre` VARCHAR(5),
-    `grado` VARCHAR(20),
-    `grupo` VARCHAR(10),
-    `imagen_url` VARCHAR(255) NULL,
-    `qr_token` VARCHAR(255) UNIQUE,
-    FOREIGN KEY (`id_usuario_fk`) REFERENCES `usuarios`(`id_usuario`) ON DELETE CASCADE
+CREATE TABLE perfil_admin (
+    id_perfil_admin INT AUTO_INCREMENT PRIMARY KEY,
+    id_usuario_fk INT NOT NULL UNIQUE,
+    nombre_completo VARCHAR(255) NOT NULL,
+    imagen_url VARCHAR(255) NULL,
+    FOREIGN KEY (id_usuario_fk) REFERENCES usuarios(id_usuario) ON DELETE CASCADE
 );
 
-CREATE TABLE `perfil_tutor` (
-    `id_perfil_tutor` INT AUTO_INCREMENT PRIMARY KEY,
-    `id_usuario_fk` INT NOT NULL UNIQUE,
-    `nombres` VARCHAR(150) NOT NULL,
-    `apellido_paterno` VARCHAR(100) NOT NULL,
-    `apellido_materno` VARCHAR(100),
-    `imagen_url` VARCHAR(255) NULL,
-    `notificaciones` ENUM('ninguna', 'correo', 'ambas') DEFAULT 'correo',
-    FOREIGN KEY (`id_usuario_fk`) REFERENCES `usuarios`(`id_usuario`) ON DELETE CASCADE
+CREATE TABLE perfil_alumno (
+    id_perfil_alumno INT AUTO_INCREMENT PRIMARY KEY,
+    id_usuario_fk INT NOT NULL UNIQUE,
+    boleta VARCHAR(10) NOT NULL UNIQUE,
+    nombres VARCHAR(150) NOT NULL,
+    apellido_paterno VARCHAR(100) NOT NULL,
+    apellido_materno VARCHAR(100),
+    fecha_nacimiento DATE,
+    curp VARCHAR(18) NOT NULL UNIQUE,
+    nss VARCHAR(20) UNIQUE,
+    tipo_sangre VARCHAR(5),
+    grado VARCHAR(20),
+    grupo VARCHAR(10),
+    imagen_url VARCHAR(255) NULL, 
+    qr_token VARCHAR(255) UNIQUE,
+    FOREIGN KEY (id_usuario_fk) REFERENCES usuarios(id_usuario) ON DELETE CASCADE
 );
 
-CREATE TABLE `vehiculos` (
-    `id_vehiculo` INT AUTO_INCREMENT PRIMARY KEY,
-    `id_perfil_alumno_fk` INT NOT NULL,
-    `tipo` VARCHAR(100) NOT NULL,
-    `descripcion` VARCHAR(255),
-    `imagen_url` VARCHAR(255) NULL,
-    `fecha_registro` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (`id_perfil_alumno_fk`) REFERENCES `perfil_alumno`(`id_perfil_alumno`) ON DELETE CASCADE
+CREATE TABLE perfil_tutor (
+    id_perfil_tutor INT AUTO_INCREMENT PRIMARY KEY,
+    id_usuario_fk INT NOT NULL UNIQUE,
+    nombres VARCHAR(150) NOT NULL,
+    apellido_paterno VARCHAR(100) NOT NULL,
+    apellido_materno VARCHAR(100),
+    imagen_url VARCHAR(255) NULL,
+    notificaciones ENUM('ninguna', 'correo', 'ambas') DEFAULT 'correo',
+    FOREIGN KEY (id_usuario_fk) REFERENCES usuarios(id_usuario) ON DELETE CASCADE
 );
 
-CREATE TABLE `alumnos_tutores` (
-    `id_relacion` INT AUTO_INCREMENT PRIMARY KEY,
-    `id_perfil_alumno_fk` INT NOT NULL,
-    `id_perfil_tutor_fk` INT NOT NULL,
-    `parentesco` VARCHAR(100) NOT NULL DEFAULT 'Tutor',
-    FOREIGN KEY (`id_perfil_alumno_fk`) REFERENCES `perfil_alumno`(`id_perfil_alumno`) ON DELETE CASCADE,
-    FOREIGN KEY (`id_perfil_tutor_fk`) REFERENCES `perfil_tutor`(`id_perfil_tutor`) ON DELETE CASCADE,
-    UNIQUE KEY `idx_alumno_tutor` (`id_perfil_alumno_fk`, `id_perfil_tutor_fk`)
+CREATE TABLE vehiculos (
+    id_vehiculo INT AUTO_INCREMENT PRIMARY KEY,
+    id_perfil_alumno_fk INT NOT NULL,
+    tipo VARCHAR(100) NOT NULL,
+    descripcion VARCHAR(255),
+    imagen_url VARCHAR(255) NULL,
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_perfil_alumno_fk) REFERENCES perfil_alumno(id_perfil_alumno) ON DELETE CASCADE
 );
 
-CREATE TABLE `asistencia` (
-    `id_asistencia` INT AUTO_INCREMENT PRIMARY KEY,
-    `id_perfil_alumno_fk` INT NOT NULL,
-    `fecha_hora_entrada` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `fecha_hora_salida` TIMESTAMP NULL,
-    `estatus` ENUM('a_tiempo', 'retardo') DEFAULT 'a_tiempo',
-    `metodo_entrada` ENUM('qr', 'manual') DEFAULT 'qr',    
-    FOREIGN KEY (`id_perfil_alumno_fk`) REFERENCES `perfil_alumno`(`id_perfil_alumno`) ON DELETE CASCADE
+CREATE TABLE alumnos_tutores (
+    id_relacion INT AUTO_INCREMENT PRIMARY KEY,
+    id_perfil_alumno_fk INT NOT NULL,
+    id_perfil_tutor_fk INT NOT NULL,
+    parentesco VARCHAR(100) NOT NULL DEFAULT 'Tutor',
+    FOREIGN KEY (id_perfil_alumno_fk) REFERENCES perfil_alumno(id_perfil_alumno) ON DELETE CASCADE,
+    FOREIGN KEY (id_perfil_tutor_fk) REFERENCES perfil_tutor(id_perfil_tutor) ON DELETE CASCADE,
+    UNIQUE KEY idx_alumno_tutor (id_perfil_alumno_fk, id_perfil_tutor_fk)
 );
 
-CREATE TABLE `anuncios` (
-    `id_anuncio` INT AUTO_INCREMENT PRIMARY KEY,
-    `id_admin_fk` INT NOT NULL,
-    `titulo` VARCHAR(255) NOT NULL,
-    `contenido` TEXT NOT NULL,
-    `destinatarios` ENUM('todos', 'solo_tutores', 'por_grado') DEFAULT 'todos',
-    `fecha_publicacion` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (`id_admin_fk`) REFERENCES `perfil_admin`(`id_perfil_admin`)
+CREATE TABLE asistencia (
+    id_asistencia INT AUTO_INCREMENT PRIMARY KEY,
+    id_perfil_alumno_fk INT NOT NULL,
+    fecha_hora_entrada TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    fecha_hora_salida TIMESTAMP NULL,
+    estatus ENUM('a_tiempo', 'retardo') DEFAULT 'a_tiempo',
+    metodo_entrada ENUM('qr', 'manual') DEFAULT 'qr',
+    FOREIGN KEY (id_perfil_alumno_fk) REFERENCES perfil_alumno(id_perfil_alumno) ON DELETE CASCADE
 );
 
-CREATE TABLE `password_reset_tokens` (
-    `id` INT AUTO_INCREMENT PRIMARY KEY,
-    `id_usuario_fk` INT NOT NULL,
-    `token` VARCHAR(255) NOT NULL UNIQUE,
-    `expira_en` TIMESTAMP NOT NULL,
-    FOREIGN KEY (`id_usuario_fk`) REFERENCES `usuarios`(`id_usuario`) ON DELETE CASCADE
+CREATE TABLE anuncios (
+    id_anuncio INT AUTO_INCREMENT PRIMARY KEY,
+    id_admin_fk INT NOT NULL,
+    titulo VARCHAR(255) NOT NULL,
+    contenido TEXT NOT NULL,
+    destinatarios ENUM('todos', 'solo_tutores', 'por_grado') DEFAULT 'todos',
+    fecha_publicacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_admin_fk) REFERENCES perfil_admin(id_perfil_admin)
 );
 
-CREATE TABLE `qr_logs` (
-    `id` INT AUTO_INCREMENT PRIMARY KEY,
-    `qr_uuid` VARCHAR(36) NOT NULL, 
-    `id_alumno_fk` INT NOT NULL,
-    `fecha_uso` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (`id_alumno_fk`) REFERENCES `perfil_alumno`(`id_perfil_alumno`) ON DELETE CASCADE,
-    UNIQUE KEY `idx_qr_alumno` (`qr_uuid`, `id_alumno_fk`)
+CREATE TABLE password_reset_tokens (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_usuario_fk INT NOT NULL,
+    token VARCHAR(255) NOT NULL UNIQUE,
+    expira_en TIMESTAMP NOT NULL,
+    FOREIGN KEY (id_usuario_fk) REFERENCES usuarios(id_usuario) ON DELETE CASCADE
 );
 
-INSERT INTO grupos_disponibles (grado, grupo, hora_entrada, hora_salida) VALUES 
-(1, '1IM1', '07:00:00', '14:00:00'), 
+CREATE TABLE qr_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    qr_uuid VARCHAR(36) NOT NULL,
+    id_alumno_fk INT NOT NULL,
+    fecha_uso TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_alumno_fk) REFERENCES perfil_alumno(id_perfil_alumno) ON DELETE CASCADE,
+    UNIQUE KEY idx_qr_alumno (qr_uuid, id_alumno_fk)
+);
+
+INSERT INTO grupos_disponibles (grado, grupo, hora_entrada, hora_salida) VALUES
+(1, '1IM1', '07:00:00', '14:00:00'),
 (1, '1IV1', '14:00:00', '21:00:00'),
-(2, '2IM1', '07:00:00', '14:00:00'), 
+(2, '2IM1', '07:00:00', '14:00:00'),
 (2, '2IV1', '14:00:00', '21:00:00'),
-(3, '3IM1', '07:00:00', '14:00:00'), 
+(3, '3IM1', '07:00:00', '14:00:00'),
 (3, '3IV1', '14:00:00', '21:00:00'),
-(4, '4IM1', '07:00:00', '14:00:00'), 
+(4, '4IM1', '07:00:00', '14:00:00'),
 (4, '4IV1', '14:00:00', '21:00:00'),
-(5, '5IM1', '07:00:00', '14:00:00'), 
+(5, '5IM1', '07:00:00', '14:00:00'),
 (5, '5IV1', '14:00:00', '21:00:00'),
-(6, '6IM1', '07:00:00', '14:00:00'), 
+(6, '6IM1', '07:00:00', '14:00:00'),
 (6, '6IV1', '14:00:00', '21:00:00');
 
-INSERT INTO usuarios (correo_electronico, contrasena_hash, rol) 
+INSERT INTO usuarios (correo_electronico, contrasena_hash, rol)
 VALUES (
     'admin@bullnodes.com',
     '$2a$10$dvrvjqcbGuSCuB0BBR7CPu37d8dUXo557xACc8w4WsGZ2VA07QMYy',
     'admin'
 );
 
-INSERT INTO perfil_admin (id_usuario_fk, nombre_completo) 
+INSERT INTO perfil_admin (id_usuario_fk, nombre_completo)
 VALUES (
     (SELECT id_usuario FROM usuarios WHERE correo_electronico = 'admin@bullnodes.com'),
     'Administrador Principal'
 );
-ALTER TABLE usuarios ADD COLUMN token_sesion_actual VARCHAR(255) NULL;
-
-ALTER TABLE usuarios 
-ADD COLUMN email_verificado BOOLEAN DEFAULT FALSE,
-ADD COLUMN telefono_verificado BOOLEAN DEFAULT FALSE,
-ADD COLUMN codigo_verificacion_email VARCHAR(6) NULL;

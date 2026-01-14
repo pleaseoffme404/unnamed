@@ -31,7 +31,7 @@ app.use((req, res, next) => {
 
 app.use(session({
     name: 'sid_escolar',
-    secret: process.env.SESSION_SECRET || 'secreto_default_dev',
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: {

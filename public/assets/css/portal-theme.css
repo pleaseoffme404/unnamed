@@ -1,0 +1,238 @@
+:root {
+    --bg-app: #fdfbf7;
+    --bg-panel: #ffffff;
+    --bg-input: #f4f1ea;
+    --text-primary: #4a4a4a;
+    --text-secondary: #8c8c8c;
+    --accent-primary: #ff8c69;
+    --accent-hover: #e07b5c;
+    --accent-text: #ffffff;
+    --border-radius: 16px;
+    --shadow-sm: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+body.dark-theme {
+    --bg-app: #1a1a1a;
+    --bg-panel: #2d2d2d;
+    --bg-input: #3d3d3d;
+    --text-primary: #e0e0e0;
+    --text-secondary: #a0a0a0;
+    --accent-primary: #ff8c69;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: var(--bg-app);
+    color: var(--text-primary);
+    font-family: 'Lato', sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.portal-container {
+    width: 100%;
+    max-width: 420px;
+    margin: auto;
+    padding: 20px;
+}
+
+.card-portal {
+    background: var(--bg-panel);
+    border-radius: var(--border-radius);
+    padding: 30px;
+    box-shadow: var(--shadow-sm);
+    text-align: center;
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.portal-icon {
+    font-size: 3rem;
+    color: var(--accent-primary);
+    margin-bottom: 15px;
+}
+
+.portal-title {
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 5px;
+    font-size: 1.8rem;
+}
+
+.portal-subtitle {
+    color: var(--text-secondary);
+    margin-bottom: 30px;
+}
+
+.form-group {
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.form-control {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 2px solid transparent;
+    background-color: var(--bg-input);
+    color: var(--text-primary);
+    font-size: 1rem;
+    transition: all 0.3s;
+}
+
+.form-control:focus {
+    background-color: var(--bg-panel);
+    border-color: var(--accent-primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(255, 140, 105, 0.1);
+}
+
+.btn-portal {
+    width: 100%;
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    background-color: var(--accent-primary);
+    color: white;
+    margin-top: 10px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s, background 0.2s;
+}
+
+.btn-portal:hover {
+    background-color: var(--accent-hover);
+}
+
+.btn-portal:active {
+    transform: scale(0.98);
+}
+
+.portal-header {
+    background: var(--bg-panel);
+    padding: 15px 20px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+.header-logo {
+    font-weight: 800;
+    font-size: 1.2rem;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.header-user {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.user-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: none;
+}
+
+@media (min-width: 576px) {
+    .user-name { display: block; }
+}
+
+.btn-logout {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.btn-logout:hover {
+    color: #ef4444; 
+}
+
+.student-card {
+    background: var(--bg-panel);
+    border-radius: var(--border-radius);
+    padding: 25px;
+    margin-bottom: 20px;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s;
+}
+
+.student-card:active {
+    transform: scale(0.98);
+}
+
+.student-avatar {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 15px;
+    border: 3px solid var(--bg-app);
+}
+
+.student-name {
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-bottom: 5px;
+}
+
+.student-info {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+}
+
+.badge-pill {
+    background: var(--bg-input);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-block;
+    margin: 0 3px;
+}
+
+.theme-toggle-fixed {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--bg-panel);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: none;
+    color: var(--text-primary);
+    font-size: 1.2rem;
+    z-index: 100;
+    transition: background 0.3s, color 0.3s;
+}
+
+.swal2-popup {
+    border-radius: 20px !important;
+    font-family: 'Lato', sans-serif !important;
+}

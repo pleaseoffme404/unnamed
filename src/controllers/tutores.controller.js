@@ -329,11 +329,132 @@ const registerTutoresMasivo = async (req, res) => {
         });
 };
 
+// --- FUNCIONES APP TUTORES ---
+
+const loginTutorApp = async (req, res) => {
+    const { correo, password } = req.body;
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        const [rows] = await connection.query(
+            `SELECT u.id_usuario, u.contrasena_hash, u.esta_activo, t.id_perfil_tutor, t.nombres 
+             FROM usuarios u 
+             JOIN perfil_tutor t ON u.id_usuario = t.id_usuario_fk 
+             WHERE u.correo_electronico = ? AND u.rol = 'tutor'`,
+            [correo]
+        );
+
+        if (rows.length === 0) {
+            return res.status(401).json({ success: false, message: 'Credenciales inválidas' });
+        }
+
+        const user = rows[0];
+
+        if (user.esta_activo !== 1) {
+            return res.status(403).json({ success: false, message: 'Cuenta desactivada' });
+        }
+
+        const validPass = await bcrypt.compare(password, user.contrasena_hash);
+        if (!validPass) {
+            return res.status(401).json({ success: false, message: 'Credenciales inválidas' });
+        }
+
+        req.session.user = {
+            id_usuario: user.id_usuario,
+            rol: 'tutor',
+            id_perfil_tutor: user.id_perfil_tutor,
+            nombre: user.nombres
+        };
+
+        res.status(200).json({ success: true, message: 'Login correcto' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error interno' });
+    } finally {
+        if (connection) connection.release();
+    }
+};
+
+const getTutorAppProfile = async (req, res) => {
+    if (!req.session.user || !req.session.user.id_perfil_tutor) {
+        return res.status(401).json({ success: false, message: 'No autorizado' });
+    }
+    const tutorId = req.session.user.id_perfil_tutor;
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        const [rows] = await connection.query(
+            `SELECT t.nombres, t.apellido_paterno, t.apellido_materno, t.imagen_url, u.correo_electronico, u.telefono 
+             FROM perfil_tutor t 
+             JOIN usuarios u ON t.id_usuario_fk = u.id_usuario 
+             WHERE t.id_perfil_tutor = ?`,
+            [tutorId]
+        );
+        if (rows.length > 0) {
+            res.status(200).json({ success: true, data: rows[0] });
+        } else {
+            res.status(404).json({ success: false, message: 'Perfil no encontrado' });
+        }
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error interno' });
+    } finally {
+        if (connection) connection.release();
+    }
+};
+
+const getTutorAppAlumnos = async (req, res) => {
+    if (!req.session.user || !req.session.user.id_perfil_tutor) {
+        return res.status(401).json({ success: false, message: 'No autorizado' });
+    }
+    const tutorId = req.session.user.id_perfil_tutor;
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        const query = `
+            SELECT 
+                a.id_perfil_alumno, 
+                a.nombres, 
+                a.apellido_paterno, 
+                a.apellido_materno, 
+                a.foto_url, 
+                a.boleta, 
+                a.grupo, 
+                a.grado,
+                g.hora_entrada as horario_entrada,
+                g.hora_salida as horario_salida,
+                (SELECT fecha_hora_entrada FROM asistencia ast WHERE ast.id_perfil_alumno_fk = a.id_perfil_alumno ORDER BY ast.fecha_hora_entrada DESC LIMIT 1) as ultima_entrada,
+                (SELECT fecha_hora_salida FROM asistencia ast WHERE ast.id_perfil_alumno_fk = a.id_perfil_alumno ORDER BY ast.fecha_hora_entrada DESC LIMIT 1) as ultima_salida,
+                (SELECT estatus FROM asistencia ast WHERE ast.id_perfil_alumno_fk = a.id_perfil_alumno ORDER BY ast.fecha_hora_entrada DESC LIMIT 1) as ultimo_estatus
+            FROM perfil_alumno a 
+            JOIN alumnos_tutores at ON a.id_perfil_alumno = at.id_perfil_alumno_fk 
+            LEFT JOIN grupos_disponibles g ON a.grupo = g.grupo
+            WHERE at.id_perfil_tutor_fk = ?
+        `;
+        const [rows] = await connection.query(query, [tutorId]);
+        res.status(200).json({ success: true, data: rows });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error interno' });
+    } finally {
+        if (connection) connection.release();
+    }
+};
+
+const logoutTutor = (req, res) => {
+    req.session.destroy((err) => {
+        if (err) return res.status(500).json({ success: false });
+        res.clearCookie('connect.sid');
+        res.status(200).json({ success: true, message: 'Logout exitoso' });
+    });
+};
+
 module.exports = {
     getAllTutores,
     getTutorById,
     registerTutor,
     updateTutor,
     deleteTutor,
-    registerTutoresMasivo
+    registerTutoresMasivo,
+    loginTutorApp,
+    getTutorAppProfile,
+    getTutorAppAlumnos,
+    logoutTutor
 };

@@ -3,7 +3,6 @@ const { body, query, validationResult } = require('express-validator');
 const validateResult = (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-        console.log('Validation Error:', JSON.stringify(errors.array(), null, 2));
         return res.status(400).json({ success: false, message: errors.array()[0].msg, errors: errors.array() });
     }
     next();
@@ -26,23 +25,19 @@ const loginMobileValidator = [
 const alumnoValidator = [
     body('nombres').trim().notEmpty().withMessage('El nombre es requerido'),
     body('apellido_paterno').trim().notEmpty().withMessage('El apellido paterno es requerido'),
-    
     body('curp')
         .toUpperCase()
         .matches(/^[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z\d]{2}$/)
         .withMessage('Formato de CURP invalido'),
-    
     body('boleta')
         .trim()
         .isLength({ min: 10, max: 10 }).withMessage('La boleta debe tener exactamente 10 digitos')
         .isNumeric().withMessage('La boleta solo debe contener numeros'),
-    
     body('nss')
         .optional({ checkFalsy: true })
         .trim()
         .isLength({ min: 11, max: 11 }).withMessage('El NSS debe tener exactamente 11 digitos')
         .isNumeric().withMessage('El NSS solo debe contener numeros'),
-
     body('fecha_nacimiento')
         .isISO8601().withMessage('Fecha de nacimiento invalida')
         .custom((value) => {
@@ -53,22 +48,17 @@ const alumnoValidator = [
             }
             return true;
         }),
-
     body('tipo_sangre')
         .optional({ checkFalsy: true })
         .isIn(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'])
         .withMessage('Tipo de sangre no valido'),
-
     body('correo_electronico').trim().isEmail().withMessage('Correo electronico invalido'),
-    
     body('telefono')
         .optional({ checkFalsy: true })
         .isMobilePhone().withMessage('Numero de telefono invalido'),
-
     body('contrasena')
         .if(body('contrasena').exists())
         .isLength({ min: 6 }).withMessage('La contraseña debe tener al menos 6 caracteres'),
-
     validateResult
 ];
 
@@ -77,11 +67,9 @@ const tutorValidator = [
     body('apellido_paterno').trim().notEmpty().withMessage('El apellido paterno es requerido'),
     body('correo_electronico').trim().isEmail().withMessage('Correo electronico invalido'),
     body('telefono').trim().isMobilePhone().withMessage('Numero de telefono invalido'),
-    
     body('contrasena')
         .if(body('contrasena').exists())
         .isLength({ min: 6 }).withMessage('La contraseña debe tener al menos 6 caracteres'),
-
     validateResult
 ];
 
@@ -103,11 +91,24 @@ const changePasswordValidator = [
     validateResult
 ];
 
+const tutorAppLoginValidator = [
+    body('correo')
+        .trim()
+        .matches(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)
+        .withMessage('Formato de correo electrónico inválido'),
+    body('password')
+        .matches(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/)
+        .withMessage('La contraseña debe tener mínimo 8 caracteres, al menos una letra y un número'),
+    validateResult
+];
+
 module.exports = {
     loginValidator,
     loginMobileValidator,
     alumnoValidator,
     tutorValidator,
     reporteValidator,
-    changePasswordValidator
+    changePasswordValidator,
+    tutorAppLoginValidator,
+    validateResult
 };
