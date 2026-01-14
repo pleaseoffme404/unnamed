@@ -170,7 +170,7 @@ const updateTutor = async (req, res) => {
                         [alumnoId]
                     );
                     if (count[0].total >= 2) {
-                        throw new Error(`El alumno ID ${alumnoId} ya tiene 2 tutores (sin contar a este).`);
+                        throw new Error(`El alumno ID ${alumnoId} ya tiene 2 tutores.`);
                     }
                 }
             }
@@ -310,7 +310,7 @@ const registerTutoresMasivo = async (req, res) => {
                         await connection.rollback();
                         let msg = 'Error BD';
                         if (error.code === 'ER_DUP_ENTRY') msg = 'Correo/Teléfono duplicado';
-                        if (error.message.includes('ya tiene 2 tutores')) msg = error.message;
+                        if (error.message && error.message.includes('ya tiene 2 tutores')) msg = error.message;
                         processingErrors.push({ fila: index + 2, error: msg });
                     }
                 }
@@ -328,8 +328,6 @@ const registerTutoresMasivo = async (req, res) => {
             }
         });
 };
-
-// --- FUNCIONES APP TUTORES ---
 
 const loginTutorApp = async (req, res) => {
     const { correo, password } = req.body;
@@ -415,7 +413,7 @@ const getTutorAppAlumnos = async (req, res) => {
                 a.nombres, 
                 a.apellido_paterno, 
                 a.apellido_materno, 
-                a.foto_url, 
+                a.imagen_url as foto_url,  
                 a.boleta, 
                 a.grupo, 
                 a.grado,
@@ -426,7 +424,7 @@ const getTutorAppAlumnos = async (req, res) => {
                 (SELECT estatus FROM asistencia ast WHERE ast.id_perfil_alumno_fk = a.id_perfil_alumno ORDER BY ast.fecha_hora_entrada DESC LIMIT 1) as ultimo_estatus
             FROM perfil_alumno a 
             JOIN alumnos_tutores at ON a.id_perfil_alumno = at.id_perfil_alumno_fk 
-            LEFT JOIN grupos_disponibles g ON a.grupo = g.grupo
+            LEFT JOIN grupos_disponibles g ON a.grado = g.grado AND a.grupo = g.grupo
             WHERE at.id_perfil_tutor_fk = ?
         `;
         const [rows] = await connection.query(query, [tutorId]);
