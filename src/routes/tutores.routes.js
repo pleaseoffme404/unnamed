@@ -35,6 +35,7 @@ router.post('/register-masivo',
 router.post('/app/login', tutorAppLoginValidator, controller.loginTutorApp);
 router.get('/app/me', isTutor, controller.getTutorAppProfile);
 router.get('/app/mis-alumnos', isTutor, controller.getTutorAppAlumnos);
+router.get('/app/alumno/:id', isTutor, controller.getTutorAppAlumnoDetalle);
 router.post('/app/logout', isTutor, controller.logoutTutor);
 
 module.exports = router;

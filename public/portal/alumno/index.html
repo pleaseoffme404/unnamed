@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalle Alumno - Portal</title>
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="/assets/css/portal-theme.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <main class="portal-container" style="max-width: 800px; margin-top: 20px;">
+        
+        <a href="/portal/dashboard/" class="btn-back">
+            <i class="fa-solid fa-arrow-left"></i> Volver
+        </a>
+
+        <div class="card-portal student-header-card">
+            <div class="d-flex align-items-center gap-3">
+                <img id="alumnoFoto" src="/assets/img/default-avatar.png" onerror="this.src='/assets/img/default-avatar.png'" class="student-avatar-small">
+                <div class="text-start">
+                    <h2 id="alumnoNombre" class="portal-title" style="font-size: 1.4rem;">Cargando...</h2>
+                    <p id="alumnoInfo" class="text-muted mb-0">...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-label">Asistencias</span>
+                <span id="totalAsistencias" class="stat-value">0</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Retardos</span>
+                <span id="totalRetardos" class="stat-value text-warning">0</span>
+            </div>
+        </div>
+
+        <h3 class="mt-4 mb-3 fw-bold" style="color: var(--text-primary);">Historial Reciente</h3>
+        <div id="historialLista" class="history-list">
+            <div class="text-center py-5">
+                <i class="fa-solid fa-circle-notch fa-spin text-muted"></i>
+            </div>
+        </div>
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="/assets/js/portal-nav.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+
+            if (!id) {
+                window.location.href = '/portal/dashboard/';
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/tutores/app/alumno/${id}`);
+                const response = await res.json();
+
+                if (!response.success) throw new Error(response.message);
+
+                const { info, historial } = response.data;
+
+                document.getElementById('alumnoNombre').textContent = info.nombres + ' ' + info.apellido_paterno;
+                document.getElementById('alumnoInfo').textContent = `${info.grado || '?'}° ${info.grupo || '?'} - Boleta: ${info.boleta}`;
+                
+                const foto = info.foto_url || info.imagen_url;
+                if (foto) {
+                    document.getElementById('alumnoFoto').src = foto;
+                }
+
+                const retardos = historial.filter(h => h.estatus === 'retardo').length;
+                document.getElementById('totalAsistencias').textContent = historial.length;
+                document.getElementById('totalRetardos').textContent = retardos;
+
+                const lista = document.getElementById('historialLista');
+                lista.innerHTML = '';
+
+                if (historial.length === 0) {
+                    lista.innerHTML = '<div class="text-center text-muted p-4">No hay registros de asistencia recientes.</div>';
+                    return;
+                }
+
+                historial.forEach(reg => {
+                    const fecha = new Date(reg.fecha_hora_entrada);
+                    let salidaTexto = '--:--';
+                    if (reg.fecha_hora_salida) {
+                        salidaTexto = new Date(reg.fecha_hora_salida).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+                    }
+                    
+                    const item = document.createElement('div');
+                    item.className = 'history-item';
+                    
+                    let statusHtml = reg.estatus === 'retardo' 
+                        ? '<span class="badge-status warning">Retardo</span>' 
+                        : '<span class="badge-status success">A tiempo</span>';
+
+                    item.innerHTML = `
+                        <div class="history-date">
+                            <span class="day">${fecha.getDate()}</span>
+                            <span class="month">${fecha.toLocaleDateString('es-ES', { month: 'short' })}</span>
+                        </div>
+                        <div class="history-details">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold" style="color: var(--text-primary)">Entrada: ${fecha.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                                ${statusHtml}
+                            </div>
+                            <div class="small text-muted">
+                                <i class="fa-solid fa-person-walking-arrow-right"></i> 
+                                Salida: ${salidaTexto}
+                            </div>
+                        </div>
+                    `;
+                    lista.appendChild(item);
+                });
+
+            } catch (error) {
+                console.error(error);
+                Swal.fire({
+                    title: 'Error', 
+                    text: 'No se pudo cargar la información.', 
+                    icon: 'error',
+                    confirmButtonColor: '#ff8c69'
+                }).then(() => {
+                   window.location.href = '/portal/dashboard/';
+                });
+            }
+        });
+    </script>
+</body>
+</html>

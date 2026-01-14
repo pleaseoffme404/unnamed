@@ -3,49 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mis Hijos - Portal Tutores</title>
+    <title>Mis Hijos - Portal</title>
     <link rel="stylesheet" href="/assets/css/style.css">
     <link rel="stylesheet" href="/assets/css/portal-theme.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 
-    <header class="portal-header">
-        <div class="header-logo">
-            <i class="fa-solid fa-school" style="color: var(--accent-primary);"></i>
-            <span>Escuela</span>
-        </div>
-        <div class="header-user">
-            <span id="tutorName" class="user-name">Cargando...</span>
-            <button id="logoutBtn" class="btn-logout" title="Cerrar Sesión">
-                <i class="fa-solid fa-right-from-bracket"></i>
-            </button>
-        </div>
-    </header>
-
-    <main class="portal-container" style="max-width: 800px;">
-        <h2 class="portal-title" style="font-size: 1.5rem; margin-bottom: 20px;">Mis Hijos</h2>
+    <main class="portal-container dashboard-container" style="margin-top: 20px;">
         
-        <div id="loadingState" style="text-align: center; padding: 40px; color: var(--text-secondary);">
-            <i class="fa-solid fa-circle-notch fa-spin fa-2x"></i>
-            <p style="margin-top: 10px;">Obteniendo información...</p>
+        <div class="mb-4 d-flex align-items-center justify-content-between">
+            <div>
+                <h1 class="portal-title" style="margin-bottom: 5px;">
+                    Hola, <span id="tutorName" style="color: var(--accent-primary);">Tutor</span>
+                </h1>
+                <p class="text-muted mb-0">Aquí tienes la actividad reciente de tus hijos.</p>
+            </div>
+            </div>
+
+        <div id="loadingState" class="text-center py-5">
+            <i class="fa-solid fa-circle-notch fa-spin text-muted" style="font-size: 2rem;"></i>
+            <p class="mt-3 text-muted">Conectando con la escuela...</p>
         </div>
 
         <div id="studentsGrid" class="hidden">
             </div>
 
-        <div id="emptyState" class="hidden" style="text-align: center; padding: 40px;">
-            <i class="fa-regular fa-folder-open" style="font-size: 3rem; color: var(--text-secondary); opacity: 0.5;"></i>
-            <p style="margin-top: 15px; color: var(--text-secondary);">No hay alumnos vinculados a tu cuenta.</p>
+        <div id="emptyState" class="hidden text-center py-5">
+            <div class="card-portal">
+                <i class="fa-regular fa-folder-open" style="font-size: 3rem; color: var(--text-secondary); opacity: 0.5; margin-bottom: 15px;"></i>
+                <h3 style="font-size: 1.2rem; font-weight: bold; color: var(--text-primary);">No se encontraron alumnos</h3>
+                <p class="text-muted">Parece que no tienes alumnos vinculados a tu cuenta.</p>
+            </div>
         </div>
+
     </main>
 
-    <button id="theme-toggle-btn" class="theme-toggle-fixed">
-        <i class="fa-solid fa-moon"></i>
-    </button>
-
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="/assets/js/portal-theme-changer.js"></script>
+    
+    <script src="/assets/js/portal-nav.js"></script>
+    
     <script src="/assets/js/portal-dash.js"></script>
+
 </body>
 </html>

@@ -443,7 +443,55 @@ const logoutTutor = (req, res) => {
         res.status(200).json({ success: true, message: 'Logout exitoso' });
     });
 };
+const getTutorAppAlumnoDetalle = async (req, res) => {
+    if (!req.session.user || !req.session.user.id_perfil_tutor) {
+        return res.status(401).json({ success: false, message: 'No autorizado' });
+    }
+    
+    const tutorId = req.session.user.id_perfil_tutor;
+    const alumnoId = req.params.id;
 
+    let connection;
+    try {
+        connection = await pool.getConnection();
+
+        const queryInfo = `
+            SELECT a.*, g.hora_entrada, g.hora_salida 
+            FROM perfil_alumno a
+            JOIN alumnos_tutores at ON a.id_perfil_alumno = at.id_perfil_alumno_fk
+            LEFT JOIN grupos_disponibles g ON a.grado = g.grado AND a.grupo = g.grupo
+            WHERE at.id_perfil_tutor_fk = ? AND a.id_perfil_alumno = ?
+        `;
+        
+        const [alumno] = await connection.query(queryInfo, [tutorId, alumnoId]);
+
+        if (alumno.length === 0) {
+            return res.status(404).json({ success: false, message: 'Alumno no encontrado o no autorizado' });
+        }
+
+        const queryHistorial = `
+            SELECT * FROM asistencia 
+            WHERE id_perfil_alumno_fk = ? 
+            ORDER BY fecha_hora_entrada DESC 
+            LIMIT 50
+        `;
+        const [historial] = await connection.query(queryHistorial, [alumnoId]);
+
+        res.status(200).json({ 
+            success: true, 
+            data: {
+                info: alumno[0],
+                historial: historial
+            } 
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Error al obtener historial' });
+    } finally {
+        if (connection) connection.release();
+    }
+};
 module.exports = {
     getAllTutores,
     getTutorById,
@@ -454,5 +502,6 @@ module.exports = {
     loginTutorApp,
     getTutorAppProfile,
     getTutorAppAlumnos,
-    logoutTutor
+    logoutTutor,
+    getTutorAppAlumnoDetalle
 };
