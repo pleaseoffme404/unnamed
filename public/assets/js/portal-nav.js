@@ -1,5 +1,35 @@
+document.addEventListener('DOMContentLoaded', async () => {
+    const path = window.location.pathname;
+
+    if (path === '/portal/' || path === '/portal/index.html') {
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/tutores/app/me');
+
+        if (res.status === 401 || res.status === 403) {
+            console.warn('Sesión no válida o rol incorrecto. Redirigiendo...');
+            localStorage.removeItem('tutor_user'); 
+            window.location.href = '/portal/';
+            return;
+        }
+
+        const data = await res.json();
+        if (!data.success) {
+            window.location.href = '/portal/';
+        } else {
+            localStorage.setItem('tutor_user', JSON.stringify(data.data));
+        }
+
+    } catch (error) {
+        console.error('Error de autenticación:', error);
+        window.location.href = '/portal/';
+    }
+});
 document.addEventListener('DOMContentLoaded', () => {
     renderNavbar();
+    checkUrgentAnnouncements();
 });
 
 function renderNavbar() {
@@ -21,6 +51,14 @@ function renderNavbar() {
             <div class="nav-menu" id="navMenu">
                 <a href="/portal/dashboard/" class="nav-link ${currentPath.includes('dashboard') ? 'active' : ''}">
                     <i class="fa-solid fa-house-user"></i> Mis Hijos
+                </a>
+
+                 <a href="/portal/anuncios/" class="nav-link ${currentPath.includes('anuncios') ? 'active' : ''}">
+                    <i class="fa-solid fa-bullhorn"></i> Avisos
+                </a>
+
+                <a href="/portal/perfil/" class="nav-link ${currentPath.includes('perfil') ? 'active' : ''}">
+                    <i class="fa-solid fa-user-gear"></i> Mi Perfil
                 </a>
                 
                 <a href="mailto:${adminEmail}?subject=Solicitud de Cita Escolar" class="nav-link">
@@ -48,30 +86,36 @@ function renderNavbar() {
     const logoutBtn = document.getElementById('logoutBtnNav');
     const themeBtn = document.getElementById('themeToggleNav');
 
-    toggleBtn.addEventListener('click', () => {
-        navMenu.classList.toggle('active');
-        const icon = toggleBtn.querySelector('i');
-        if (navMenu.classList.contains('active')) {
-            icon.classList.replace('fa-bars', 'fa-xmark');
-        } else {
-            icon.classList.replace('fa-xmark', 'fa-bars');
-        }
-    });
+    if(toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            navMenu.classList.toggle('active');
+            const icon = toggleBtn.querySelector('i');
+            if (navMenu.classList.contains('active')) {
+                icon.classList.replace('fa-bars', 'fa-xmark');
+            } else {
+                icon.classList.replace('fa-xmark', 'fa-bars');
+            }
+        });
+    }
 
-    logoutBtn.addEventListener('click', async () => {
-        try {
-            await fetch('/api/tutores/app/logout', { method: 'POST' });
-            window.location.href = '/portal/';
-        } catch (error) {
-            window.location.href = '/portal/';
-        }
-    });
+    if(logoutBtn) {
+        logoutBtn.addEventListener('click', async () => {
+            try {
+                await fetch('/api/tutores/app/logout', { method: 'POST' });
+                window.location.href = '/portal/';
+            } catch (error) {
+                window.location.href = '/portal/';
+            }
+        });
+    }
 
-    themeBtn.addEventListener('click', () => {
-        const isDark = document.body.classList.toggle('dark-theme');
-        localStorage.setItem('theme', isDark ? 'dark' : 'light');
-        updateThemeIcon(isDark);
-    });
+    if(themeBtn) {
+        themeBtn.addEventListener('click', () => {
+            const isDark = document.body.classList.toggle('dark-theme');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            updateThemeIcon(isDark);
+        });
+    }
 
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'dark') {
@@ -87,5 +131,39 @@ function updateThemeIcon(isDark) {
         btn.innerHTML = '<i class="fa-solid fa-sun"></i> Tema Claro';
     } else {
         btn.innerHTML = '<i class="fa-solid fa-moon"></i> Tema Oscuro';
+    }
+}
+
+async function checkUrgentAnnouncements() {
+    try {
+        const res = await fetch('/api/tutores/app/anuncios');
+        const response = await res.json();
+
+        if (response.success && response.data.length > 0) {
+            const ultimoAnuncio = response.data[0];
+            
+            if (ultimoAnuncio.prioridad === 'urgente') {
+                const nav = document.querySelector('.portal-navbar');
+                if(!nav) return;
+
+                const existingBanner = document.querySelector('.urgent-banner');
+                if(existingBanner) return;
+
+                const bannerHtml = `
+                    <div class="urgent-banner">
+                        <div class="urgent-banner-content">
+                            <div class="urgent-text">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                                <span><strong>${ultimoAnuncio.titulo}:</strong> ${ultimoAnuncio.contenido.substring(0, 80)}${ultimoAnuncio.contenido.length > 80 ? '...' : ''}</span>
+                            </div>
+                            <a href="/portal/anuncios/" class="urgent-link">Ver detalles <i class="fa-solid fa-arrow-right"></i></a>
+                        </div>
+                    </div>
+                `;
+                nav.parentNode.insertBefore(document.createRange().createContextualFragment(bannerHtml), nav.nextSibling);
+            }
+        }
+    } catch (error) {
+        console.error(error);
     }
 }

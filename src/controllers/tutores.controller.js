@@ -372,32 +372,7 @@ const loginTutorApp = async (req, res) => {
     }
 };
 
-const getTutorAppProfile = async (req, res) => {
-    if (!req.session.user || !req.session.user.id_perfil_tutor) {
-        return res.status(401).json({ success: false, message: 'No autorizado' });
-    }
-    const tutorId = req.session.user.id_perfil_tutor;
-    let connection;
-    try {
-        connection = await pool.getConnection();
-        const [rows] = await connection.query(
-            `SELECT t.nombres, t.apellido_paterno, t.apellido_materno, t.imagen_url, u.correo_electronico, u.telefono 
-             FROM perfil_tutor t 
-             JOIN usuarios u ON t.id_usuario_fk = u.id_usuario 
-             WHERE t.id_perfil_tutor = ?`,
-            [tutorId]
-        );
-        if (rows.length > 0) {
-            res.status(200).json({ success: true, data: rows[0] });
-        } else {
-            res.status(404).json({ success: false, message: 'Perfil no encontrado' });
-        }
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'Error interno' });
-    } finally {
-        if (connection) connection.release();
-    }
-};
+
 
 const getTutorAppAlumnos = async (req, res) => {
     if (!req.session.user || !req.session.user.id_perfil_tutor) {
@@ -492,6 +467,105 @@ const getTutorAppAlumnoDetalle = async (req, res) => {
         if (connection) connection.release();
     }
 };
+const getTutorAppProfile = async (req, res) => {
+    if (!req.session.user || !req.session.user.id_perfil_tutor) {
+        return res.status(401).json({ success: false, message: 'No autorizado' });
+    }
+    const tutorId = req.session.user.id_perfil_tutor;
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        const [rows] = await connection.query(
+            `SELECT 
+                t.nombres, t.apellido_paterno, t.apellido_materno, t.imagen_url,
+                t.notify_entrada, t.notify_salida, t.notify_retardo, t.notify_falta,
+                u.correo_electronico, u.telefono 
+             FROM perfil_tutor t 
+             JOIN usuarios u ON t.id_usuario_fk = u.id_usuario 
+             WHERE t.id_perfil_tutor = ?`,
+            [tutorId]
+        );
+        if (rows.length > 0) {
+            res.status(200).json({ success: true, data: rows[0] });
+        } else {
+            res.status(404).json({ success: false, message: 'Perfil no encontrado' });
+        }
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error interno' });
+    } finally {
+        if (connection) connection.release();
+    }
+};
+
+const updateTutorAppProfile = async (req, res) => {
+    if (!req.session.user || !req.session.user.id_perfil_tutor) {
+        return res.status(401).json({ success: false, message: 'No autorizado' });
+    }
+    
+    const tutorId = req.session.user.id_perfil_tutor;
+    const userId = req.session.user.id_usuario;
+    
+    const { 
+        telefono, 
+        password, 
+        notify_entrada, notify_salida, notify_retardo, notify_falta,
+        imagen_url_actual 
+    } = req.body;
+
+    let connection;
+    let newImageUrl = imagen_url_actual;
+
+    try {
+        if (req.file) {
+            const nombreArchivo = `${req.session.user.nombre || 'tutor'}_${Date.now()}`;
+            newImageUrl = await saveImage(req.file, 'tutores', nombreArchivo);
+            if (imagen_url_actual && imagen_url_actual !== '/assets/img/default-avatar.png') {
+                await deleteImage(imagen_url_actual);
+            }
+        }
+
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+
+        let userQuery = 'UPDATE usuarios SET telefono = ?';
+        let userParams = [telefono];
+
+        if (password && password.trim() !== '') {
+            const salt = await bcrypt.genSalt(10);
+            const hash = await bcrypt.hash(password, salt);
+            userQuery += ', contrasena_hash = ?';
+            userParams.push(hash);
+        }
+        
+        userQuery += ' WHERE id_usuario = ?';
+        userParams.push(userId);
+        
+        await connection.query(userQuery, userParams);
+
+        const nEntrada = (notify_entrada === 'true' || notify_entrada === 'on') ? 1 : 0;
+        const nSalida = (notify_salida === 'true' || notify_salida === 'on') ? 1 : 0;
+        const nRetardo = (notify_retardo === 'true' || notify_retardo === 'on') ? 1 : 0;
+        const nFalta = (notify_falta === 'true' || notify_falta === 'on') ? 1 : 0;
+
+        await connection.query(
+            `UPDATE perfil_tutor 
+             SET imagen_url = ?, 
+                 notify_entrada = ?, notify_salida = ?, notify_retardo = ?, notify_falta = ?
+             WHERE id_perfil_tutor = ?`,
+            [newImageUrl, nEntrada, nSalida, nRetardo, nFalta, tutorId]
+        );
+
+        await connection.commit();
+        res.status(200).json({ success: true, message: 'Perfil actualizado correctamente' });
+
+    } catch (error) {
+        if (connection) await connection.rollback();
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Error al actualizar perfil' });
+    } finally {
+        if (connection) connection.release();
+    }
+};
 module.exports = {
     getAllTutores,
     getTutorById,
@@ -503,5 +577,8 @@ module.exports = {
     getTutorAppProfile,
     getTutorAppAlumnos,
     logoutTutor,
-    getTutorAppAlumnoDetalle
+    getTutorAppAlumnoDetalle,
+    updateTutorAppProfile,
+    getTutorAppProfile
+
 };

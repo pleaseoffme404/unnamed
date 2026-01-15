@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avisos Escolares - Portal</title>
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="/assets/css/portal-theme.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <main class="portal-container dashboard-container" style="margin-top: 20px;">
+        
+        <div class="mb-4">
+            <a href="/portal/dashboard/" class="btn-back">
+                <i class="fa-solid fa-arrow-left"></i> Volver al Inicio
+            </a>
+            <h1 class="portal-title">Tablón de Avisos</h1>
+            <p class="text-muted">Mantente informado de las novedades y comunicados oficiales.</p>
+        </div>
+
+        <div id="anunciosList" class="announcement-list">
+            <div class="text-center py-5">
+                <i class="fa-solid fa-circle-notch fa-spin text-muted" style="font-size: 2rem;"></i>
+            </div>
+        </div>
+
+        <div id="emptyState" class="hidden text-center py-5">
+            <div class="card-portal">
+                <i class="fa-regular fa-bell-slash" style="font-size: 3rem; color: var(--text-secondary); opacity: 0.5; margin-bottom: 15px;"></i>
+                <h3 style="font-size: 1.2rem; font-weight: bold; color: var(--text-primary);">Sin Novedades</h3>
+                <p class="text-muted">No hay anuncios publicados en este momento.</p>
+            </div>
+        </div>
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="/assets/js/portal-nav.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const container = document.getElementById('anunciosList');
+            const emptyState = document.getElementById('emptyState');
+            
+            try {
+                const res = await fetch('/api/tutores/app/anuncios');
+                const response = await res.json();
+                
+                if(!response.success || response.data.length === 0) {
+                    container.classList.add('hidden');
+                    emptyState.classList.remove('hidden');
+                    return;
+                }
+
+                container.innerHTML = '';
+
+                response.data.forEach(anuncio => {
+                    const fecha = new Date(anuncio.fecha_publicacion).toLocaleDateString('es-MX', {
+                        year: 'numeric', month: 'long', day: 'numeric'
+                    });
+                    
+                    const esUrgente = anuncio.prioridad === 'urgente';
+                    const badgeClass = esUrgente ? 'badge-urgent' : 'badge-normal';
+                    const badgeText = esUrgente ? 'Importante ' : 'Información';
+                    const iconClass = esUrgente ? 'fa-triangle-exclamation' : 'fa-circle-info';
+
+                    const html = `
+                        <details class="announcement-card">
+                            <summary class="announcement-summary">
+                                <div class="ann-header">
+                                    <span class="ann-badge ${badgeClass}">${badgeText}</span>
+                                    <span class="ann-date">${fecha}</span>
+                                </div>
+                                <h3 class="ann-title">${anuncio.titulo}</h3>
+                                <p class="ann-preview">${anuncio.contenido}</p>
+                                <i class="fa-solid fa-chevron-down expand-icon"></i>
+                            </summary>
+                            <div class="ann-content">
+                                ${formatContent(anuncio.contenido)}
+                            </div>
+                        </details>
+                    `;
+                    container.insertAdjacentHTML('beforeend', html);
+                });
+
+            } catch (error) {
+                console.error(error);
+                container.innerHTML = '<p class="text-center text-danger">Error al cargar la información.</p>';
+            }
+
+            function formatContent(text) {
+                return text.replace(/\n/g, '<br>');
+            }
+        });
+    </script>
+</body>
+</html>

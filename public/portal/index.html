@@ -7,6 +7,39 @@
     <link rel="stylesheet" href="/assets/css/style.css">
     <link rel="stylesheet" href="/assets/css/portal-theme.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            display: flex;
+            justify-content: center; 
+            align-items: center;    
+            min-height: 100vh;
+            margin: 0;
+            background-color: var(--bg-app);
+        }
+
+        .portal-container {
+            width: 100%;
+            max-width: 420px; 
+            padding: 20px;
+            margin: 0;
+        }
+        
+        .back-link {
+            display: block;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(0,0,0,0.1);
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s;
+        }
+        
+        .back-link:hover {
+            color: var(--accent-primary);
+        }
+    </style>
 </head>
 <body>
 
@@ -21,23 +54,27 @@
             <form id="portalLoginForm">
                 <div class="form-group">
                     <label class="form-label">Correo Electrónico</label>
-                    <input type="email" id="correo" class="form-control" placeholder="ejemplo@correo.com" required>
+                    <input type="email" id="correo" class="form-control" placeholder="nombre@correo.com" required>
                 </div>
 
                 <div class="form-group">
-            <label class="form-label">Contraseña</label>
-             <div style="position: relative;"> <input type="password" id="password" class="form-control" placeholder="••••••••" required>
-        
-                  <button type="button" id="togglePass" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-secondary);">
-                 <i class="fa-solid fa-eye"></i>
-               </button>
-             </div>
-            </div>
+                    <label class="form-label">Contraseña</label>
+                    <div style="position: relative;">
+                        <input type="password" id="password" class="form-control" placeholder="••••••••" required>
+                        <button type="button" id="togglePass" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-secondary);">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
 
                 <button type="submit" class="btn btn-portal" id="btnSubmit">
                     Ingresar
                 </button>
             </form>
+
+            <a href="/" class="back-link">
+                <i class="fa-solid fa-arrow-left"></i> Soy Personal Administrativo
+            </a>
         </div>
     </div>
 

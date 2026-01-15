@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Perfil - Portal</title>
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="/assets/css/portal-theme.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .profile-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .avatar-upload {
+            position: relative;
+            cursor: pointer;
+            width: 120px;
+            height: 120px;
+            margin-bottom: 15px;
+        }
+        .avatar-upload img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid var(--bg-panel);
+            box-shadow: var(--shadow-sm);
+        }
+        .avatar-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .avatar-upload:hover .avatar-overlay { opacity: 1; }
+        
+        .switch-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: var(--bg-input);
+            border-radius: 12px;
+            margin-bottom: 10px;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--accent-primary); }
+        input:checked + .slider:before { transform: translateX(24px); }
+
+        .validation-error {
+            color: var(--danger);
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: none;
+        }
+        input:invalid { border-color: var(--danger); }
+    </style>
+</head>
+<body>
+
+    <main class="portal-container dashboard-container" style="margin-top: 20px; max-width: 600px;">
+        
+        <div class="card-portal" style="text-align: left;">
+            <h2 class="portal-title" style="text-align: center;">Mi Cuenta</h2>
+            <p class="text-muted" style="text-align: center; margin-bottom: 30px;">Gestiona tus datos y preferencias</p>
+
+            <form id="profileForm" novalidate>
+                
+                <div class="profile-header">
+                    <label class="avatar-upload">
+                        <img id="previewImg" src="/assets/img/default-avatar.png">
+                        <div class="avatar-overlay"><i class="fa-solid fa-camera"></i></div>
+                        <input type="file" id="imagen" name="imagen" accept="image/png, image/jpeg, image/jpg" style="display: none;">
+                    </label>
+                    <input type="hidden" id="imagen_url_actual" name="imagen_url_actual">
+                    <h3 id="nombreCompleto" style="margin:0; color: var(--text-primary);">Cargando...</h3>
+                    <p id="emailDisplay" style="color: var(--text-secondary); margin:0;">...</p>
+                </div>
+
+                <h4 style="margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">Datos de Contacto</h4>
+                
+                <div class="form-group">
+                    <label class="form-label">Teléfono Móvil (10 dígitos)</label>
+                    <input type="tel" id="telefono" name="telefono" class="form-control" maxlength="10" placeholder="Ej. 5512345678" required>
+                    <span class="validation-error" id="phoneError">Ingresa un número válido de 10 dígitos.</span>
+                </div>
+
+                <h4 style="margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">Seguridad</h4>
+                
+                <div class="form-group">
+                    <label class="form-label">Nueva Contraseña (Opcional)</label>
+                    <input type="password" id="password" name="password" class="form-control" placeholder="Mínimo 6 caracteres" minlength="6">
+                    <span class="validation-error" id="passError">La contraseña es muy corta (mínimo 6 caracteres).</span>
+                </div>
+
+                <h4 style="margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">Configurar Alertas</h4>
+                
+                <div class="switch-group">
+                    <label><i class="fa-solid fa-check-circle" style="color: #23A559;"></i> Notificar Entradas</label>
+                    <label class="switch">
+                        <input type="checkbox" id="notify_entrada" name="notify_entrada">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="switch-group">
+                    <label><i class="fa-solid fa-person-walking-arrow-right" style="color: #5865F2;"></i> Notificar Salidas</label>
+                    <label class="switch">
+                        <input type="checkbox" id="notify_salida" name="notify_salida">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="switch-group">
+                    <label><i class="fa-solid fa-clock" style="color: #F0B132;"></i> Notificar Retardos</label>
+                    <label class="switch">
+                        <input type="checkbox" id="notify_retardo" name="notify_retardo">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="switch-group">
+                    <label><i class="fa-solid fa-circle-exclamation" style="color: #DA373C;"></i> Notificar Faltas</label>
+                    <label class="switch">
+                        <input type="checkbox" id="notify_falta" name="notify_falta">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-portal" style="margin-top: 30px;">Guardar Cambios</button>
+            </form>
+        </div>
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="/assets/js/portal-nav.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const form = document.getElementById('profileForm');
+            const imgInput = document.getElementById('imagen');
+            const previewImg = document.getElementById('previewImg');
+            const phoneInput = document.getElementById('telefono');
+            
+            const phoneRegex = /^[0-9]{10}$/;
+            
+            phoneInput.addEventListener('input', function(e) {
+                this.value = this.value.replace(/[^0-9]/g, '').substring(0, 10);
+            });
+
+            try {
+                const res = await fetch('/api/tutores/app/me');
+                const data = await res.json();
+                
+                if (data.success) {
+                    const t = data.data;
+                    document.getElementById('nombreCompleto').textContent = `${t.nombres} ${t.apellido_paterno}`;
+                    document.getElementById('emailDisplay').textContent = t.correo_electronico;
+                    document.getElementById('telefono').value = t.telefono || '';
+                    document.getElementById('imagen_url_actual').value = t.imagen_url;
+                    
+                    if(t.imagen_url) previewImg.src = t.imagen_url;
+
+                    document.getElementById('notify_entrada').checked = !!t.notify_entrada;
+                    document.getElementById('notify_salida').checked = !!t.notify_salida;
+                    document.getElementById('notify_retardo').checked = !!t.notify_retardo;
+                    document.getElementById('notify_falta').checked = !!t.notify_falta;
+                }
+            } catch (e) {
+                console.error("Error cargando perfil");
+            }
+
+            imgInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    if(this.files[0].size > 5 * 1024 * 1024) {
+                        Swal.fire('Error', 'La imagen es muy pesada (Máx 5MB)', 'error');
+                        this.value = ''; 
+                        return;
+                    }
+
+                    const reader = new FileReader();
+                    reader.onload = (e) => previewImg.src = e.target.result;
+                    reader.readAsDataURL(this.files[0]);
+                }
+            });
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                // Validaciones Manuales antes de enviar
+                const phoneVal = document.getElementById('telefono').value;
+                const passVal = document.getElementById('password').value;
+                let isValid = true;
+
+                if (!phoneRegex.test(phoneVal)) {
+                    document.getElementById('phoneError').style.display = 'block';
+                    isValid = false;
+                } else {
+                    document.getElementById('phoneError').style.display = 'none';
+                }
+
+                if (passVal.length > 0 && passVal.length < 6) {
+                    document.getElementById('passError').style.display = 'block';
+                    isValid = false;
+                } else {
+                    document.getElementById('passError').style.display = 'none';
+                }
+
+                if (!isValid) return;
+
+                const formData = new FormData(form);
+                formData.set('notify_entrada', document.getElementById('notify_entrada').checked);
+                formData.set('notify_salida', document.getElementById('notify_salida').checked);
+                formData.set('notify_retardo', document.getElementById('notify_retardo').checked);
+                formData.set('notify_falta', document.getElementById('notify_falta').checked);
+
+                try {
+                    const res = await fetch('/api/tutores/app/me', {
+                        method: 'PUT',
+                        body: formData 
+                    });
+                    
+                    const result = await res.json();
+                    
+                    if (res.ok && result.success) {
+                        Swal.fire({
+                            title: '¡Guardado!',
+                            text: 'Tu perfil ha sido actualizado.',
+                            icon: 'success',
+                            confirmButtonColor: '#ff8c69'
+                        }).then(() => {
+                             location.reload(); 
+                        });
+                    } else {
+                        throw new Error(result.message);
+                    }
+                } catch (e) {
+                    Swal.fire('Error', e.message || 'No se pudo guardar.', 'error');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

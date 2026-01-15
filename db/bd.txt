@@ -152,3 +152,12 @@ VALUES (
     (SELECT id_usuario FROM usuarios WHERE correo_electronico = 'admin@bullnodes.com'),
     'Administrador Principal'
 );
+
+ALTER TABLE anuncios ADD COLUMN prioridad ENUM('normal', 'urgente') DEFAULT 'normal';
+
+ALTER TABLE perfil_tutor DROP COLUMN notificaciones;
+ALTER TABLE perfil_tutor 
+ADD COLUMN notify_entrada BOOLEAN DEFAULT TRUE,
+ADD COLUMN notify_salida BOOLEAN DEFAULT TRUE,
+ADD COLUMN notify_retardo BOOLEAN DEFAULT TRUE,
+ADD COLUMN notify_falta BOOLEAN DEFAULT TRUE;

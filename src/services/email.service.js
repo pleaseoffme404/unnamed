@@ -1,43 +1,127 @@
 const nodemailer = require('nodemailer');
-require('dotenv').config();
 
 const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port: process.env.SMTP_PORT,
     secure: process.env.SMTP_SECURE === 'true',
     auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-    },
-    tls: {
-        rejectUnauthorized: false
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
     }
 });
 
-transporter.verify(function (error, success) {
-    if (error) {
-        console.error('Error de conexion SMTP:', error);
-    } else {
-        console.log('Servidor SMTP conectado exitosamente.');
-    }
-});
-
-const sendEmail = async (to, subject, html) => {
+const enviarCorreo = async (destinatario, asunto, htmlBody) => {
     try {
-        const info = await transporter.sendMail({
-            from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_FROM_ADDRESS}>`,
-            to: to,
-            subject: subject,
-            html: html,
+        await transporter.sendMail({
+            from: `"Notificaciones Escolares" <${process.env.SMTP_USER}>`,
+            to: destinatario,
+            subject: asunto,
+            html: htmlBody
         });
-        console.log('Mensaje enviado ID:', info.messageId);
-        return { success: true, message: 'Correo enviado' };
+        console.log(`Enviado a ${destinatario}: ${asunto}`);
     } catch (error) {
-        console.error('Error critico al enviar correo:', error);
-        return { success: false, message: 'Error al enviar correo' };
+        console.error(' Error envío correo:', error);
     }
 };
 
-module.exports = {
-    sendEmail
+const baseStyle = `
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    color: #4a4a4a;
+    max-width: 600px;
+    margin: 0 auto;
+    background-color: #ffffff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    border: 1px solid #f0f0f0;
+`;
+
+const headerStyle = (bgColor) => `
+    background-color: ${bgColor};
+    padding: 25px;
+    text-align: center;
+    color: white;
+`;
+
+const contentStyle = `padding: 30px 25px;`;
+
+const footerStyle = `
+    background-color: #fdfbf7;
+    padding: 15px;
+    text-align: center;
+    font-size: 12px;
+    color: #8c8c8c;
+    border-top: 1px solid #eaeaea;
+`;
+
+const templates = {
+    entrada: (nombre, hora) => `
+        <div style="${baseStyle}">
+            <div style="${headerStyle('#23A559')}">
+                <h1 style="margin:0; font-size: 24px;">¡Llegada Exitosa!</h1>
+            </div>
+            <div style="${contentStyle}">
+                <p style="font-size: 16px; margin-bottom: 20px;">Hola,</p>
+                <p style="font-size: 16px; line-height: 1.5;">
+                    Se ha registrado la entrada de <strong>${nombre}</strong> a las instalaciones de la escuela.
+                </p>
+                <div style="background-color: #f0fdf4; border-left: 4px solid #23A559; padding: 15px; margin: 20px 0;">
+                    <p style="margin:0; color: #166534; font-weight: bold;">🕒 Hora de registro: ${hora}</p>
+                </div>
+                <a href="${process.env.APP_URL || '#'}/portal" style="display: inline-block; background-color: #ff8c69; color: white; text-decoration: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; margin-top: 10px;">Ver en el Portal</a>
+            </div>
+            <div style="${footerStyle}">Sistema de Asistencia Escolar</div>
+        </div>
+    `,
+    salida: (nombre, hora) => `
+        <div style="${baseStyle}">
+            <div style="${headerStyle('#5865F2')}">
+                <h1 style="margin:0; font-size: 24px;">Salida Registrada</h1>
+            </div>
+            <div style="${contentStyle}">
+                <p style="font-size: 16px; line-height: 1.5;">
+                    El alumno <strong>${nombre}</strong> ha salido de la escuela.
+                </p>
+                <div style="background-color: #eff6ff; border-left: 4px solid #5865F2; padding: 15px; margin: 20px 0;">
+                    <p style="margin:0; color: #1e40af; font-weight: bold;">🕒 Hora de salida: ${hora}</p>
+                </div>
+            </div>
+            <div style="${footerStyle}">Sistema de Asistencia Escolar</div>
+        </div>
+    `,
+    retardo: (nombre, hora) => `
+        <div style="${baseStyle}">
+            <div style="${headerStyle('#F0B132')}">
+                <h1 style="margin:0; font-size: 24px;">Entrada con Retardo</h1>
+            </div>
+            <div style="${contentStyle}">
+                <p style="font-size: 16px; line-height: 1.5;">
+                    <strong>${nombre}</strong> ha ingresado a la escuela después de la hora límite establecida.
+                </p>
+                <div style="background-color: #fefce8; border-left: 4px solid #F0B132; padding: 15px; margin: 20px 0;">
+                    <p style="margin:0; color: #854d0e; font-weight: bold;">🕒 Hora de registro: ${hora}</p>
+                </div>
+            </div>
+            <div style="${footerStyle}">Sistema de Asistencia Escolar</div>
+        </div>
+    `,
+    falta: (nombre, fecha) => `
+        <div style="${baseStyle}">
+            <div style="${headerStyle('#DA373C')}">
+                <h1 style="margin:0; font-size: 24px;">Aviso de Inasistencia</h1>
+            </div>
+            <div style="${contentStyle}">
+                <p style="font-size: 16px; line-height: 1.5;">
+                    Estimado tutor, no tenemos registro de entrada de <strong>${nombre}</strong> el día de hoy.
+                </p>
+                <div style="background-color: #fef2f2; border-left: 4px solid #DA373C; padding: 15px; margin: 20px 0;">
+                    <p style="margin:0; color: #991b1b; font-weight: bold;">📅 Fecha: ${fecha}</p>
+                </div>
+                <p style="font-size: 14px; color: #8c8c8c;">Si consideras que esto es un error, por favor contacta a la administración.</p>
+            </div>
+            <div style="${footerStyle}">Sistema de Asistencia Escolar</div>
+        </div>
+    `
 };
+
+module.exports = { enviarCorreo, templates };
