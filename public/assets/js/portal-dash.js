@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         class="student-avatar" 
                         style="border-color: ${statusInfo.color}"
                     >
-                    <span style="position: absolute; bottom: 10px; right: 0; background: ${statusInfo.color}; color: white; border-radius: 50%; padding: 5px; width: 24px; height: 24px; font-size: 12px; display: flex; align-items: center; justify-content: center;">
+                    <span style="position: absolute; bottom: 10px; right: 0; background: ${statusInfo.color}; color: white; border-radius: 50%; padding: 5px; width: 28px; height: 28px; font-size: 14px; display: flex; align-items: center; justify-content: center; border: 2px solid white;">
                         <i class="${statusInfo.icon}"></i>
                     </span>
                 </div>
@@ -69,18 +69,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <h3 class="student-name">${alumno.nombres}</h3>
                 <p class="student-info">${alumno.grado || '?'}° ${alumno.grupo || ''}</p>
 
-                <div style="background: ${statusInfo.bg}; color: ${statusInfo.text}; padding: 10px; border-radius: 10px; margin-bottom: 15px; font-weight: bold; border: 1px solid ${statusInfo.color}">
-                    ${statusInfo.label}
+                <div style="background: ${statusInfo.bg}; color: ${statusInfo.text}; padding: 8px 15px; border-radius: 20px; margin-bottom: 15px; font-weight: bold; border: 1px solid ${statusInfo.color}; font-size: 0.9rem;">
+                    <i class="${statusInfo.icon}" style="margin-right:5px;"></i> ${statusInfo.label}
                 </div>
 
-                <div style="display: flex; justify-content: center; font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 15px;">
+                <div style="display: flex; justify-content: center; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 15px;">
                    ${alumno.ultima_entrada ? 
-                        `<span><i class="fa-solid fa-clock-rotate-left"></i> Último: ${new Date(alumno.ultima_entrada).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>` 
-                        : '<span>Sin actividad reciente</span>'}
+                       `<span><i class="fa-solid fa-clock"></i> Entrada: ${new Date(alumno.ultima_entrada).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>` 
+                       : '<span>--:--</span>'}
                 </div>
 
-                <button class="btn btn-portal" style="padding: 10px; font-size: 0.9rem; background-color: var(--bg-input); color: var(--text-primary);" onclick="verDetalle(${alumno.id_perfil_alumno})">
-                    <i class="fa-solid fa-list-check"></i> Ver Historial
+                <button class="btn btn-portal" style="padding: 10px; font-size: 0.9rem; background-color: var(--bg-input); color: var(--text-primary); width: 100%; border:none; cursor:pointer; border-radius:8px;" onclick="verDetalle(${alumno.id_perfil_alumno})">
+                    Ver Historial
                 </button>
             `;
             
@@ -88,23 +88,54 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+   
     function calcularEstado(alumno) {
-        if (!alumno.ultima_entrada) {
-            return { label: 'Sin Actividad', color: '#9ca3af', bg: '#f3f4f6', text: '#374151', icon: 'fa-bed' };
-        }
         const ahora = new Date();
+
+        if (!alumno.ultima_entrada) {
+            if (alumno.horario_salida) {
+                const [hrsSalida, minsSalida] = alumno.horario_salida.split(':');
+                const fechaSalida = new Date();
+                fechaSalida.setHours(hrsSalida, minsSalida, 0);
+
+                if (ahora > fechaSalida) {
+                     return { label: 'Falta', color: '#ef4444', bg: '#fee2e2', text: '#991b1b', icon: 'fa-solid fa-xmark' }; // ROJO
+                }
+            }
+            return { label: 'Pendiente', color: '#9ca3af', bg: '#f3f4f6', text: '#374151', icon: 'fa-solid fa-minus' }; // GRIS
+        }
+        
         const entrada = new Date(alumno.ultima_entrada);
         const salida = alumno.ultima_salida ? new Date(alumno.ultima_salida) : null;
-        
         const esHoy = entrada.toDateString() === ahora.toDateString();
 
-        if (esHoy) {
-            if (salida && salida > entrada) {
-                return { label: '🔴 Ya salió', color: '#ef4444', bg: '#fee2e2', text: '#991b1b', icon: 'fa-person-walking-arrow-right' };
-            }
-            return { label: '🟢 En la Escuela', color: '#10b981', bg: '#d1fae5', text: '#065f46', icon: 'fa-school' };
+        if (!esHoy) {
+            return { label: 'Pendiente', color: '#9ca3af', bg: '#f3f4f6', text: '#374151', icon: 'fa-solid fa-minus' };
         }
-        return { label: '⚪ Fuera', color: '#6b7280', bg: '#f3f4f6', text: '#1f2937', icon: 'fa-house' };
+
+        if (salida && salida > entrada) {
+            return { label: 'Salida', color: '#3b82f6', bg: '#eff6ff', text: '#1e40af', icon: 'fa-solid fa-person-walking-arrow-right' };
+        }
+
+        let esRetardo = false;
+        
+        if (alumno.horario_entrada) {
+            const [hrs, mins] = alumno.horario_entrada.split(':');
+            const fechaHorario = new Date(entrada); 
+            fechaHorario.setHours(hrs, mins, 0);
+            
+            const toleranciaMs = 10 * 60 * 1000; 
+
+            if (entrada.getTime() > (fechaHorario.getTime() + toleranciaMs)) {
+                esRetardo = true;
+            }
+        }
+
+        if (esRetardo) {
+            return { label: 'Retardo', color: '#eab308', bg: '#fefce8', text: '#854d0e', icon: 'fa-solid fa-triangle-exclamation' }; // AMARILLO
+        }
+
+        return { label: 'En Clase', color: '#22c55e', bg: '#dcfce7', text: '#166534', icon: 'fa-solid fa-check' }; // VERDE
     }
 
     if (logoutBtn) {

@@ -8,7 +8,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const studentForm = document.getElementById('student-form');
     const btnCloseDetail = document.getElementById('btn-close-detail');
     
+    const selectRows = document.getElementById('rows-per-page');
+    const btnPrev = document.getElementById('btn-prev');
+    const btnNext = document.getElementById('btn-next');
+    const lblStart = document.getElementById('lbl-start');
+    const lblEnd = document.getElementById('lbl-end');
+    const lblTotal = document.getElementById('lbl-total');
+
     let allAlumnos = []; 
+    let filteredAlumnos = [];
+    let currentPage = 1;
+    let rowsPerPage = 10;
 
     init();
 
@@ -45,7 +55,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await apiFetch('/api/alumnos', 'GET');
             if (response.success) {
                 allAlumnos = response.data;
-                renderTable(allAlumnos);
+                filteredAlumnos = allAlumnos;
+                currentPage = 1;
+                renderTable();
             } else {
                 if (tableBody) tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--danger);">Error cargando datos.</td></tr>`;
             }
@@ -55,16 +67,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function renderTable(data) {
+    function renderTable() {
         if (!tableBody) return;
         tableBody.innerHTML = '';
 
-        if (data.length === 0) {
+        if (filteredAlumnos.length === 0) {
             tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">No se encontraron alumnos.</td></tr>`;
+            lblStart.textContent = 0;
+            lblEnd.textContent = 0;
+            lblTotal.textContent = 0;
+            btnPrev.disabled = true;
+            btnNext.disabled = true;
             return;
         }
 
-        data.forEach(alumno => {
+        const startIndex = (currentPage - 1) * rowsPerPage;
+        const endIndex = Math.min(startIndex + rowsPerPage, filteredAlumnos.length);
+        const paginatedData = filteredAlumnos.slice(startIndex, endIndex);
+
+        paginatedData.forEach(alumno => {
             const row = document.createElement('tr');
             const avatar = alumno.imagen_url || '../assets/img/default-avatar.png';
             const nombre = `${alumno.nombres} ${alumno.apellido_paterno}`;
@@ -102,6 +123,13 @@ document.addEventListener('DOMContentLoaded', () => {
             tableBody.appendChild(row);
         });
 
+        lblStart.textContent = startIndex + 1;
+        lblEnd.textContent = endIndex;
+        lblTotal.textContent = filteredAlumnos.length;
+
+        btnPrev.disabled = currentPage === 1;
+        btnNext.disabled = endIndex >= filteredAlumnos.length;
+
         document.querySelectorAll('.btn-view').forEach(btn => {
             btn.addEventListener('click', (e) => openDetail(e.target.dataset.id));
         });
@@ -110,6 +138,32 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupListeners() {
         if (searchInput) searchInput.addEventListener('input', filterData);
         if (filterGrade) filterGrade.addEventListener('change', filterData);
+
+        if (selectRows) {
+            selectRows.addEventListener('change', (e) => {
+                rowsPerPage = parseInt(e.target.value);
+                currentPage = 1;
+                renderTable();
+            });
+        }
+
+        if (btnPrev) {
+            btnPrev.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderTable();
+                }
+            });
+        }
+
+        if (btnNext) {
+            btnNext.addEventListener('click', () => {
+                if ((currentPage * rowsPerPage) < filteredAlumnos.length) {
+                    currentPage++;
+                    renderTable();
+                }
+            });
+        }
 
         if (btnCloseDetail) {
             btnCloseDetail.addEventListener('click', (e) => {
@@ -174,12 +228,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const term = searchInput.value.toLowerCase();
         const grade = filterGrade.value;
 
-        const filtered = allAlumnos.filter(a => {
+        filteredAlumnos = allAlumnos.filter(a => {
             const textMatch = `${a.nombres} ${a.apellido_paterno} ${a.curp} ${a.boleta} ${a.correo_electronico}`.toLowerCase().includes(term);
             const gradeMatch = grade === '' || (a.grado && a.grado.toString() === grade);
             return textMatch && gradeMatch;
         });
-        renderTable(filtered);
+        
+        currentPage = 1;
+        renderTable();
     }
 
     function openDetail(id) {

@@ -9,36 +9,40 @@ const validateResult = (req, res, next) => {
 };
 
 const loginValidator = [
-    body('correo').isEmail().withMessage('El correo electronico no es valido'),
-    body('password').notEmpty().withMessage('La contraseña es requerida'),
+    body('correo').trim().escape().isEmail().withMessage('El correo electronico no es valido'),
+    body('password').trim().escape().notEmpty().withMessage('La contraseña es requerida'),
     validateResult
 ];
 
 const loginMobileValidator = [
-    body('boleta').notEmpty().withMessage('La boleta es requerida')
+    body('boleta').trim().escape().notEmpty().withMessage('La boleta es requerida')
         .isString().withMessage('La boleta debe ser texto')
-        .isLength({ min: 10, max: 10 }).withMessage('La boleta debe tener 10 digitos'),
-    body('password').notEmpty().withMessage('La contraseña es requerida'),
+        .isLength({ min: 10, max: 10 }).withMessage('La boleta debe tener 10 digitos')
+        .isNumeric().withMessage('La boleta solo debe contener numeros'),
+    body('password').trim().escape().notEmpty().withMessage('La contraseña es requerida'),
     validateResult
 ];
 
 const alumnoValidator = [
-    body('nombres').trim().notEmpty().withMessage('El nombre es requerido'),
-    body('apellido_paterno').trim().notEmpty().withMessage('El apellido paterno es requerido'),
+    body('nombres').trim().escape().notEmpty().withMessage('El nombre es requerido')
+        .matches(/^[a-zA-ZÁÉÍÓÚáéíóúÑñ\s\.]+$/).withMessage('El nombre contiene caracteres no validos'),
+    body('apellido_paterno').trim().escape().notEmpty().withMessage('El apellido paterno es requerido')
+        .matches(/^[a-zA-ZÁÉÍÓÚáéíóúÑñ\s\.]+$/).withMessage('El apellido contiene caracteres no validos'),
     body('curp')
-        .toUpperCase()
+        .trim().escape().toUpperCase()
         .matches(/^[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z\d]{2}$/)
-        .withMessage('Formato de CURP invalido'),
+        .withMessage('Formato de CURP invalido (Verifica caracteres y longitud)'),
     body('boleta')
-        .trim()
+        .trim().escape()
         .isLength({ min: 10, max: 10 }).withMessage('La boleta debe tener exactamente 10 digitos')
         .isNumeric().withMessage('La boleta solo debe contener numeros'),
     body('nss')
         .optional({ checkFalsy: true })
-        .trim()
+        .trim().escape()
         .isLength({ min: 11, max: 11 }).withMessage('El NSS debe tener exactamente 11 digitos')
         .isNumeric().withMessage('El NSS solo debe contener numeros'),
     body('fecha_nacimiento')
+        .trim().escape()
         .isISO8601().withMessage('Fecha de nacimiento invalida')
         .custom((value) => {
             const fecha = new Date(value);
@@ -50,32 +54,40 @@ const alumnoValidator = [
         }),
     body('tipo_sangre')
         .optional({ checkFalsy: true })
+        .trim().escape()
         .isIn(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'])
         .withMessage('Tipo de sangre no valido'),
-    body('correo_electronico').trim().isEmail().withMessage('Correo electronico invalido'),
+    body('correo_electronico').trim().escape().isEmail().withMessage('Correo electronico invalido'),
     body('telefono')
         .optional({ checkFalsy: true })
-        .isMobilePhone().withMessage('Numero de telefono invalido'),
+        .trim().escape()
+        .isMobilePhone().withMessage('Numero de telefono invalido')
+        .isLength({ min: 10, max: 10 }).withMessage('El telefono debe tener 10 digitos'),
     body('contrasena')
         .if(body('contrasena').exists())
+        .trim().escape()
         .isLength({ min: 6 }).withMessage('La contraseña debe tener al menos 6 caracteres'),
     validateResult
 ];
 
 const tutorValidator = [
-    body('nombres').trim().notEmpty().withMessage('El nombre es requerido'),
-    body('apellido_paterno').trim().notEmpty().withMessage('El apellido paterno es requerido'),
-    body('correo_electronico').trim().isEmail().withMessage('Correo electronico invalido'),
-    body('telefono').trim().isMobilePhone().withMessage('Numero de telefono invalido'),
+    body('nombres').trim().escape().notEmpty().withMessage('El nombre es requerido')
+        .matches(/^[a-zA-ZÁÉÍÓÚáéíóúÑñ\s\.]+$/).withMessage('Nombre invalido'),
+    body('apellido_paterno').trim().escape().notEmpty().withMessage('El apellido paterno es requerido')
+        .matches(/^[a-zA-ZÁÉÍÓÚáéíóúÑñ\s\.]+$/).withMessage('Apellido invalido'),
+    body('correo_electronico').trim().escape().isEmail().withMessage('Correo electronico invalido'),
+    body('telefono').trim().escape().isMobilePhone().withMessage('Numero de telefono invalido')
+        .isLength({ min: 10, max: 10 }).withMessage('El telefono debe tener 10 digitos'),
     body('contrasena')
         .if(body('contrasena').exists())
+        .trim().escape()
         .isLength({ min: 6 }).withMessage('La contraseña debe tener al menos 6 caracteres'),
     validateResult
 ];
 
 const reporteValidator = [
-    query('fechaInicio').isISO8601().withMessage('Fecha inicio invalida'),
-    query('fechaFin').isISO8601().withMessage('Fecha fin invalida')
+    query('fechaInicio').trim().escape().isISO8601().withMessage('Fecha inicio invalida'),
+    query('fechaFin').trim().escape().isISO8601().withMessage('Fecha fin invalida')
         .custom((value, { req }) => {
             if (new Date(value) < new Date(req.query.fechaInicio)) {
                 throw new Error('La fecha fin no puede ser menor a la fecha inicio');
@@ -86,19 +98,19 @@ const reporteValidator = [
 ];
 
 const changePasswordValidator = [
-    body('oldPassword').notEmpty().withMessage('La contraseña actual es requerida'),
-    body('newPassword').isLength({ min: 6 }).withMessage('La nueva contraseña debe tener al menos 6 caracteres'),
+    body('oldPassword').trim().escape().notEmpty().withMessage('La contraseña actual es requerida'),
+    body('newPassword').trim().escape().isLength({ min: 6 }).withMessage('La nueva contraseña debe tener al menos 6 caracteres'),
     validateResult
 ];
 
 const tutorAppLoginValidator = [
     body('correo')
-        .trim()
+        .trim().escape()
         .matches(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)
         .withMessage('Formato de correo electrónico inválido'),
     body('password')
-        .matches(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/)
-        .withMessage('La contraseña debe tener mínimo 8 caracteres, al menos una letra y un número'),
+        .trim().escape()
+        .notEmpty().withMessage('La contraseña es requerida'),
     validateResult
 ];
 

@@ -359,6 +359,66 @@ const resetPassword = async (req, res) => {
     }
 };
 
+
+const lockKioskSession = (req, res) => {
+    if (req.session) {
+        req.session.kiosk_locked = true;
+        req.session.save((err) => {
+            if (err) {
+                console.error('[AUTH KIOSK] Error al bloquear sesión:', err);
+                return res.status(500).json({ success: false });
+            }
+            res.json({ success: true });
+        });
+    } else {
+        res.status(401).json({ success: false, message: 'No hay sesión activa' });
+    }
+};
+
+const unlockKioskSession = async (req, res) => {
+    const { password } = req.body;
+    
+    if (!req.session.user || !req.session.user.id_usuario) {
+        return res.status(401).json({ success: false, message: 'Sesión expirada' });
+    }
+
+    const userId = req.session.user.id_usuario;
+
+    if (!password) {
+        return res.status(400).json({ success: false, message: 'Falta contraseña' });
+    }
+
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        const [rows] = await connection.query('SELECT contrasena_hash FROM usuarios WHERE id_usuario = ?', [userId]);
+
+        if (rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+        }
+
+        const isMatch = await bcrypt.compare(password, rows[0].contrasena_hash);
+
+        if (isMatch) {
+            req.session.kiosk_locked = false;
+            req.session.save((err) => {
+                if (err) {
+                    console.error('[AUTH KIOSK] Error guardando sesión:', err);
+                    return res.status(500).json({ success: false });
+                }
+                res.json({ success: true, message: 'Desbloqueado' });
+            });
+        } else {
+            res.status(401).json({ success: false, message: 'Contraseña incorrecta' });
+        }
+    } catch (error) {
+        console.error('[AUTH KIOSK] Error interno:', error);
+        res.status(500).json({ success: false, message: 'Error interno' });
+    } finally {
+        if (connection) connection.release();
+    }
+};
+
 module.exports = {
     login,
     loginMobile,
@@ -369,5 +429,7 @@ module.exports = {
     logout,
     registerAdmin,
     forgotPassword,
-    resetPassword
+    resetPassword,
+    lockKioskSession,
+    unlockKioskSession
 };

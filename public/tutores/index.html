@@ -51,6 +51,27 @@
                     </tbody>
                 </table>
             </div>
+
+            <div class="pagination-toolbar">
+                <div class="rows-selector">
+                    <label>Mostrar</label>
+                    <select id="rows-per-page">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                    </select>
+                    <span>registros</span>
+                </div>
+                
+                <div class="page-info">
+                    Viendo <span id="lbl-start">0</span> - <span id="lbl-end">0</span> de <span id="lbl-total">0</span>
+                </div>
+
+                <div class="pagination-buttons">
+                    <button id="btn-prev" class="btn-page" disabled>&lt; Anterior</button>
+                    <button id="btn-next" class="btn-page" disabled>Siguiente &gt;</button>
+                </div>
+            </div>
         </div>
 
         <div id="detail-view" class="view-section hidden">

@@ -98,7 +98,7 @@ const registerAlumno = async (req, res) => {
     } catch (error) {
         if (connection) await connection.rollback();
         if (imageUrl) await deleteImage(imageUrl);
-        res.status(500).json({ success: false, message: error.code === 'ER_DUP_ENTRY' ? 'Datos duplicados.' : 'Error interno.' });
+        res.status(500).json({ success: false, message: error.code === 'ER_DUP_ENTRY' ? 'Datos duplicados (Boleta/CURP/Correo).' : 'Error interno.' });
     } finally {
         if (connection) connection.release();
     }
@@ -196,18 +196,43 @@ const generarPasswordTemporal = (nombres, paterno, materno, fecha, boleta) => {
     }
 };
 
+const validateAlumnoRow = (data) => {
+    const curpRegex = /^[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z\d]{2}$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const boletaRegex = /^\d{10}$/;
+    const nameRegex = /^[a-zA-ZÁÉÍÓÚáéíóúÑñ\s\.]+$/;
+
+    if (!data.nombres || !nameRegex.test(data.nombres)) return 'Nombre inválido';
+    if (!data.apellido_paterno || !nameRegex.test(data.apellido_paterno)) return 'Apellido Paterno inválido';
+    if (!data.curp || !curpRegex.test(data.curp.toUpperCase())) return 'CURP inválida';
+    if (!data.boleta || !boletaRegex.test(data.boleta)) return 'Boleta inválida (debe ser 10 dígitos)';
+    if (!data.correo_electronico || !emailRegex.test(data.correo_electronico)) return 'Correo inválido';
+    
+    return null; 
+};
+
 const registerAlumnosMasivo = async (req, res) => {
     if (!req.file) return res.status(400).json({ success: false, message: 'Falta archivo.' });
 
     const buffer = req.file.buffer;
-    const stream = Readable.from(buffer.toString());
+    const stream = Readable.from(buffer.toString('utf8'));
     const alumnos = [];
     let processingErrors = [];
 
     stream
         .pipe(csv())
-        .on('data', (row) => alumnos.push(row))
+        .on('data', (row) => {
+            const trimmedRow = {};
+            Object.keys(row).forEach(key => {
+                trimmedRow[key.trim()] = row[key].trim();
+            });
+            alumnos.push(trimmedRow);
+        })
         .on('end', async () => {
+            if (alumnos.length > 500) {
+                return res.status(400).json({ success: false, message: 'El archivo excede el límite de 500 registros.' });
+            }
+
             let connection;
             try {
                 connection = await pool.getConnection();
@@ -220,14 +245,15 @@ const registerAlumnosMasivo = async (req, res) => {
                         curp, boleta, nss, tipo_sangre, grado, grupo
                     } = alumno;
 
-                    if (!correo_electronico || !nombres || !apellido_paterno || !curp || !boleta) {
-                        processingErrors.push({ fila: index + 2, error: 'Faltan datos obligatorios.' });
+                    const validationError = validateAlumnoRow(alumno);
+                    if (validationError) {
+                        processingErrors.push({ fila: index + 2, error: validationError, data: alumno });
                         continue;
                     }
 
                     if (!contrasena) {
                         if (!fecha_nacimiento) {
-                            processingErrors.push({ fila: index + 2, error: 'Sin contraseña y sin fecha de nacimiento para generarla.' });
+                            processingErrors.push({ fila: index + 2, error: 'Sin contraseña y sin fecha de nacimiento.', data: alumno });
                             continue;
                         }
                         contrasena = generarPasswordTemporal(nombres, apellido_paterno, apellido_materno, fecha_nacimiento, boleta);
@@ -254,7 +280,7 @@ const registerAlumnosMasivo = async (req, res) => {
                         await connection.rollback();
                         let msg = 'Error BD';
                         if (error.code === 'ER_DUP_ENTRY') msg = 'Boleta, CURP o Correo duplicado';
-                        processingErrors.push({ fila: index + 2, data: alumno, error: msg });
+                        processingErrors.push({ fila: index + 2, error: msg, data: alumno });
                     }
                 }
 

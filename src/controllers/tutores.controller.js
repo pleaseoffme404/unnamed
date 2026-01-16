@@ -247,18 +247,41 @@ const deleteTutor = async (req, res) => {
     }
 };
 
+const validateTutorRow = (data) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const nameRegex = /^[a-zA-ZÁÉÍÓÚáéíóúÑñ\s\.]+$/;
+    const phoneRegex = /^\d{10}$/;
+
+    if (!data.nombres || !nameRegex.test(data.nombres)) return 'Nombre inválido';
+    if (!data.apellido_paterno || !nameRegex.test(data.apellido_paterno)) return 'Apellido Paterno inválido';
+    if (!data.correo_electronico || !emailRegex.test(data.correo_electronico)) return 'Correo inválido';
+    if (data.telefono && !phoneRegex.test(data.telefono)) return 'Teléfono debe ser 10 dígitos';
+    
+    return null; 
+};
+
 const registerTutoresMasivo = async (req, res) => {
     if (!req.file) return res.status(400).json({ success: false, message: 'Falta archivo.' });
 
     const buffer = req.file.buffer;
-    const stream = Readable.from(buffer.toString());
+    const stream = Readable.from(buffer.toString('utf8'));
     const tutores = [];
     let processingErrors = [];
 
     stream
         .pipe(csv())
-        .on('data', (row) => tutores.push(row))
+        .on('data', (row) => {
+            const trimmedRow = {};
+            Object.keys(row).forEach(key => {
+                trimmedRow[key.trim()] = row[key].trim();
+            });
+            tutores.push(trimmedRow);
+        })
         .on('end', async () => {
+            if (tutores.length > 500) {
+                return res.status(400).json({ success: false, message: 'El archivo excede el límite de 500 registros.' });
+            }
+
             let connection;
             try {
                 connection = await pool.getConnection();
@@ -271,8 +294,14 @@ const registerTutoresMasivo = async (req, res) => {
                         boleta_alumno 
                     } = tutor;
 
-                    if (!correo_electronico || !contrasena || !nombres || !apellido_paterno) {
-                        processingErrors.push({ fila: index + 2, error: 'Datos obligatorios faltantes.' });
+                    const validationError = validateTutorRow(tutor);
+                    if (validationError) {
+                        processingErrors.push({ fila: index + 2, error: validationError, data: tutor });
+                        continue;
+                    }
+
+                    if (!contrasena) {
+                        processingErrors.push({ fila: index + 2, error: 'Falta contraseña.', data: tutor });
                         continue;
                     }
 
@@ -291,6 +320,8 @@ const registerTutoresMasivo = async (req, res) => {
                                 if (count[0].total >= 2) {
                                     throw new Error(`El alumno con boleta ${boleta_alumno} ya tiene 2 tutores.`);
                                 }
+                            } else {
+                                throw new Error(`Alumno con boleta ${boleta_alumno} no encontrado.`);
                             }
                         }
 
@@ -320,8 +351,8 @@ const registerTutoresMasivo = async (req, res) => {
                         await connection.rollback();
                         let msg = 'Error BD';
                         if (error.code === 'ER_DUP_ENTRY') msg = 'Correo/Teléfono duplicado';
-                        if (error.message && error.message.includes('ya tiene 2 tutores')) msg = error.message;
-                        processingErrors.push({ fila: index + 2, error: msg });
+                        if (error.message) msg = error.message;
+                        processingErrors.push({ fila: index + 2, error: msg, data: tutor });
                     }
                 }
 
@@ -338,10 +369,6 @@ const registerTutoresMasivo = async (req, res) => {
             }
         });
 };
-
-/* =========================================================
-   FUNCIONES APP MÓVIL / PORTAL (TUTORES)
-   ========================================================= */
 
 const loginTutorApp = async (req, res) => {
     const { correo, password } = req.body;
@@ -387,13 +414,16 @@ const loginTutorApp = async (req, res) => {
 };
 
 const getTutorAppAlumnos = async (req, res) => {
-    if (!req.session.user || !req.session.user.id_perfil_tutor) {
-        return res.status(401).json({ success: false, message: 'No autorizado' });
-    }
     const tutorId = req.session.user.id_perfil_tutor;
+
+    if (!tutorId) {
+        return res.status(401).json({ success: false, message: 'Sesión no válida o expirada' });
+    }
+
     let connection;
     try {
         connection = await pool.getConnection();
+
         const query = `
             SELECT 
                 a.id_perfil_alumno, 
@@ -407,16 +437,18 @@ const getTutorAppAlumnos = async (req, res) => {
                 g.hora_entrada as horario_entrada,
                 g.hora_salida as horario_salida,
                 (SELECT fecha_hora_entrada FROM asistencia ast WHERE ast.id_perfil_alumno_fk = a.id_perfil_alumno ORDER BY ast.fecha_hora_entrada DESC LIMIT 1) as ultima_entrada,
-                (SELECT fecha_hora_salida FROM asistencia ast WHERE ast.id_perfil_alumno_fk = a.id_perfil_alumno ORDER BY ast.fecha_hora_entrada DESC LIMIT 1) as ultima_salida,
-                (SELECT estatus FROM asistencia ast WHERE ast.id_perfil_alumno_fk = a.id_perfil_alumno ORDER BY ast.fecha_hora_entrada DESC LIMIT 1) as ultimo_estatus
+                (SELECT fecha_hora_salida FROM asistencia ast WHERE ast.id_perfil_alumno_fk = a.id_perfil_alumno ORDER BY ast.fecha_hora_entrada DESC LIMIT 1) as ultima_salida
             FROM perfil_alumno a 
             JOIN alumnos_tutores at ON a.id_perfil_alumno = at.id_perfil_alumno_fk 
             LEFT JOIN grupos_disponibles g ON a.grado = g.grado AND a.grupo = g.grupo
             WHERE at.id_perfil_tutor_fk = ?
         `;
+        
         const [rows] = await connection.query(query, [tutorId]);
         res.status(200).json({ success: true, data: rows });
+
     } catch (error) {
+        console.error('Error en getTutorAppAlumnos:', error);
         res.status(500).json({ success: false, message: 'Error interno' });
     } finally {
         if (connection) connection.release();

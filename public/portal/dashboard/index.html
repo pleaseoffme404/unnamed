@@ -7,34 +7,82 @@
     <link rel="stylesheet" href="/assets/css/style.css">
     <link rel="stylesheet" href="/assets/css/portal-theme.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .students-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .student-card {
+            background: var(--bg-panel);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-color);
+            transition: transform 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            position: relative;
+        }
+
+        .student-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--accent-primary);
+        }
+
+        .student-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid var(--bg-app);
+            margin-bottom: 15px;
+            background-color: #eee;
+        }
+        
+        .student-name { margin: 10px 0 5px; color: var(--text-primary); }
+        .student-info { margin: 0 0 15px; color: var(--text-secondary); font-size: 0.9rem; }
+
+        .hidden { display: none !important; }
+        
+        .loading-container {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+        .empty-container {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+            grid-column: 1 / -1;
+        }
+    </style>
 </head>
 <body>
 
     <main class="portal-container dashboard-container" style="margin-top: 20px;">
         
-        <div class="mb-4 d-flex align-items-center justify-content-between">
-            <div>
-                <h1 class="portal-title" style="margin-bottom: 5px;">
-                    Hola, <span id="tutorName" style="color: var(--accent-primary);">Tutor</span>
-                </h1>
-                <p class="text-muted mb-0">Aquí tienes la actividad reciente de tus hijos.</p>
-            </div>
-            </div>
-
-        <div id="loadingState" class="text-center py-5">
-            <i class="fa-solid fa-circle-notch fa-spin text-muted" style="font-size: 2rem;"></i>
-            <p class="mt-3 text-muted">Conectando con la escuela...</p>
+        <div class="header-section" style="margin-bottom: 20px;">
+            <h2 class="portal-title">Hola, <span id="tutorName">Tutor</span></h2>
+            <p class="text-muted">Aquí está el estado actual de tus hijos.</p>
         </div>
 
-        <div id="studentsGrid" class="hidden">
+        <div id="loadingState" class="loading-container">
+            <i class="fa-solid fa-spinner fa-spin" style="font-size: 3rem; color: var(--accent-primary);"></i>
+            <p style="margin-top: 15px;">Cargando información...</p>
+        </div>
+
+        <div id="studentsGrid" class="students-grid hidden">
             </div>
 
-        <div id="emptyState" class="hidden text-center py-5">
-            <div class="card-portal">
-                <i class="fa-regular fa-folder-open" style="font-size: 3rem; color: var(--text-secondary); opacity: 0.5; margin-bottom: 15px;"></i>
-                <h3 style="font-size: 1.2rem; font-weight: bold; color: var(--text-primary);">No se encontraron alumnos</h3>
-                <p class="text-muted">Parece que no tienes alumnos vinculados a tu cuenta.</p>
-            </div>
+        <div id="emptyState" class="empty-container hidden">
+            <i class="fa-solid fa-child-reaching" style="font-size: 3rem; margin-bottom: 15px;"></i>
+            <h3>No tienes alumnos asignados</h3>
+            <p>Si esto es un error, contacta a la administración escolar.</p>
         </div>
 
     </main>
@@ -42,7 +90,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <script src="/assets/js/portal-nav.js"></script>
-    
+    <script src="/assets/js/portal-auth.js"></script>
     <script src="/assets/js/portal-dash.js"></script>
 
 </body>

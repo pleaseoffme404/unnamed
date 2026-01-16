@@ -8,29 +8,89 @@
     <link rel="stylesheet" href="../../assets/css/style.css">
     <link rel="stylesheet" href="../../assets/css/header.css">
     <link rel="stylesheet" href="../../assets/css/alumnos.css">
+    <style>
+        .requirements-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+        .requirements-table th, .requirements-table td {
+            border: 1px solid var(--border-color);
+            padding: 8px;
+            text-align: left;
+        }
+        .requirements-table th { background: var(--bg-input); font-weight: bold; }
+        
+        .preview-wrapper {
+            margin-top: 20px;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            display: none;
+        }
+        .preview-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        .preview-table th {
+            background: var(--bg-input);
+            padding: 10px;
+            position: sticky;
+            top: 0;
+        }
+        .preview-table td {
+            padding: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .preview-table tr.invalid-row { background-color: rgba(218, 55, 60, 0.05); }
+        .cell-error { 
+            background-color: rgba(218, 55, 60, 0.2); 
+            color: var(--danger);
+            font-weight: bold;
+            cursor: help;
+        }
+    </style>
 </head>
 <body>
 
     <header class="main-header"></header>
 
     <main class="page-content">
-        <div class="register-card" style="max-width: 650px;">
+        <div class="register-card" style="max-width: 900px;">
             <div class="register-header">
                 <h2 class="page-title">Carga Masiva de Alumnos</h2>
                 <a href="/alumnos/index.html" class="btn btn-secondary">Volver</a>
             </div>
 
             <div style="background-color: var(--bg-input); padding: 15px; border-radius: 6px; margin-bottom: 20px; font-size: 13px; color: var(--text-secondary);">
-                <strong>Instrucciones:</strong>
-                <p>Sube un archivo .CSV con las siguientes columnas (orden sugerido):</p>
-                <code style="display:block; margin: 8px 0; font-family: monospace; background: var(--bg-panel); padding: 8px; border-radius: 4px;">
-                    correo_electronico, telefono, contrasena, nombres, apellido_paterno, apellido_materno, fecha_nacimiento, curp, boleta, nss, tipo_sangre, grado, grupo
-                </code>
-                <ul style="margin-left: 20px; margin-top: 10px;">
-                    <li><strong>Contraseña:</strong> Opcional. Si se deja vacía, se generará: <em>Iniciales + MMYY + 4 dígitos boleta</em>.</li>
-                    <li><strong>Fecha Nacimiento:</strong> Formato YYYY-MM-DD (Obligatoria si no hay contraseña).</li>
-                    <li><strong>Boleta:</strong> 10 dígitos obligatorios.</li>
-                </ul>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <strong>Guía de Datos:</strong>
+                    <button type="button" id="btn-download-template" class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Descargar Plantilla CSV
+                    </button>
+                </div>
+                
+                <table class="requirements-table">
+                    <thead>
+                        <tr>
+                            <th>Campo</th>
+                            <th>Requerido</th>
+                            <th>Formato / Reglas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Nombres / Apellidos</td><td>Sí</td><td>Solo letras, espacios y puntos.</td></tr>
+                        <tr><td>Boleta</td><td>Sí</td><td>Exactamente 10 dígitos numéricos.</td></tr>
+                        <tr><td>CURP</td><td>Sí</td><td>18 caracteres (Formato oficial).</td></tr>
+                        <tr><td>Correo</td><td>Sí</td><td>Email válido.</td></tr>
+                        <tr><td>Teléfono</td><td>Opcional</td><td>10 dígitos numéricos.</td></tr>
+                        <tr><td>Fecha Nacimiento</td><td>Sí*</td><td>YYYY-MM-DD (*Si no hay contraseña).</td></tr>
+                    </tbody>
+                </table>
             </div>
 
             <form id="mass-register-form">
@@ -46,15 +106,25 @@
                     <p id="file-name" style="margin-top: 10px; font-weight: 600; color: var(--accent-primary);"></p>
                 </div>
 
-                <div class="form-actions-footer">
+                <div id="preview-container" class="preview-wrapper">
+                    <div style="padding: 10px; background: var(--bg-panel); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between;">
+                        <strong>Previsualización de Datos</strong>
+                        <span id="preview-stats" style="font-size: 12px; color: var(--text-muted);"></span>
+                    </div>
+                    <table class="preview-table" id="preview-table-body">
+                    </table>
+                </div>
+
+                <div class="form-actions-footer" style="margin-top: 20px;">
                     <div id="form-feedback" class="feedback-message" style="width: 100%; text-align: left;"></div>
                     <button type="submit" class="btn btn-primary" id="btn-upload" disabled>Procesar Archivo</button>
                 </div>
             </form>
 
             <div id="error-log" style="margin-top: 20px; display: none;">
-                <h4 style="color: var(--danger); font-size: 14px; margin-bottom: 10px;">Reporte de Errores:</h4>
+                <h4 style="color: var(--danger); font-size: 14px; margin-bottom: 10px;">Reporte de Errores del Servidor:</h4>
                 <div class="log-container" id="log-content"></div>
+                <button id="btn-export-errors" class="btn btn-danger" style="margin-top: 15px; display: none;">Descargar Reporte de Errores (CSV)</button>
             </div>
         </div>
     </main>

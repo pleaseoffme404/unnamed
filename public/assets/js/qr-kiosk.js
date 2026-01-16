@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalAuth = document.getElementById('reauth-modal');
     const reauthForm = document.getElementById('reauth-form');
     const cancelReauth = document.getElementById('cancel-reauth');
+    const btnUnlockSubmit = reauthForm.querySelector('button[type="submit"]'); 
     
     const simSelect = document.getElementById('sim-student-select');
     const simBtn = document.getElementById('btn-simulate-scan');
@@ -31,10 +32,21 @@ document.addEventListener('DOMContentLoaded', () => {
     init();
 
     function init() {
+        lockSession(); 
+        
         startClock();
         startKioskLoop();
         loadStudentsSim();
         setupAuthLock();
+    }
+
+    async function lockSession() {
+        try {
+            await apiFetch('/api/auth/kiosk/lock', 'POST');
+            console.log('🔒 Modo Kiosco Activado: Sesión bloqueada para navegación.');
+        } catch (error) {
+            console.error('Error al bloquear sesión:', error);
+        }
     }
 
     function startClock() {
@@ -177,6 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnLock.addEventListener('click', (e) => {
             e.preventDefault();
             modalAuth.classList.add('active');
+            document.getElementById('reauth-pass').value = ''; 
         });
 
         cancelReauth.addEventListener('click', () => {
@@ -185,9 +198,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
         reauthForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const pass = document.getElementById('reauth-pass').value;
-            if(pass) {
-                window.location.href = '/dashboard/index.html';
+            const passInput = document.getElementById('reauth-pass');
+            const pass = passInput.value;
+            
+            if(!pass) return;
+
+            const originalText = btnUnlockSubmit.textContent;
+            btnUnlockSubmit.textContent = 'Verificando...';
+            btnUnlockSubmit.disabled = true;
+
+            try {
+                const res = await apiFetch('/api/auth/kiosk/unlock', 'POST', { password: pass });
+
+                if (res.success) {
+                    window.location.href = '/dashboard/index.html';
+                } else {
+                    alert('Contraseña incorrecta');
+                    btnUnlockSubmit.textContent = originalText;
+                    btnUnlockSubmit.disabled = false;
+                    passInput.value = '';
+                    passInput.focus();
+                }
+            } catch (error) {
+                console.error(error);
+                alert('Error de conexión');
+                btnUnlockSubmit.textContent = originalText;
+                btnUnlockSubmit.disabled = false;
             }
         });
     }
