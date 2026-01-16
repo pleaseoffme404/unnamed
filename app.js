@@ -53,6 +53,5 @@ app.listen(PORT, () => {
     console.log(`Servidor corriendo en puerto: ${PORT}`);
     console.log(`   - Local Web:    http://localhost:${PORT}`);
     console.log(`   - Android Emu:  http://10.0.2.2:${PORT}/api`);
-    console.log(`   - Android Fis:  http://192.168.100.141:${PORT}/api`);
     console.log(`   - QR Secret:    ${process.env.QR_SECRET ? 'Cargado desde .env' : 'Usando Default (Inseguro)'}`);
 });

@@ -1,48 +1,46 @@
 document.addEventListener('DOMContentLoaded', () => {
-
-    apiFetch('/api/auth/verificar', 'GET').then(data => {
-        if (data.success && data.autenticado && data.tipo === 'admin') {
-            window.location.href = '/dashboard/index.html';
-        }
-    }).catch(() => {});
-
-    const loginForm = document.getElementById('login-form');
-    const loginButton = document.querySelector('button[type="submit"]');
-    const loginFeedback = document.getElementById('login-feedback');
+    const forgotForm = document.getElementById('forgot-password-form');
     
-    const emailInput = document.getElementById('email');
-    const passwordInput = document.getElementById('password');
-
-    if (loginForm) {
-        loginForm.addEventListener('submit', async (e) => {
+    if (forgotForm) {
+        forgotForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            if(loginButton) {
-                loginButton.disabled = true;
-                loginButton.textContent = 'Ingresando...';
-            }
-            if(loginFeedback) loginFeedback.style.display = 'none';
+            const emailInput = document.getElementById('email-forgot');
+            const feedback = document.getElementById('forgot-feedback');
+            const btn = forgotForm.querySelector('button');
+            const originalText = btn.textContent;
 
-            const data = {
-                correo: emailInput.value,
-                password: passwordInput.value
-            };
+            btn.disabled = true;
+            btn.textContent = 'Enviando...';
+            feedback.style.display = 'none';
 
             try {
-                const response = await apiFetch('/api/auth/login', 'POST', data);
-                if (response.success) {
-                    window.location.href = '/dashboard/index.html';
+                const res = await fetch('/api/auth/forgot-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ correo: emailInput.value })
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    feedback.textContent = 'Si el correo existe, se han enviado las instrucciones.';
+                    feedback.className = 'feedback-message success';
+                    feedback.style.display = 'block';
+                    forgotForm.reset();
+                } else {
+                    feedback.textContent = data.message || 'Error al procesar solicitud.';
+                    feedback.className = 'feedback-message error';
+                    feedback.style.display = 'block';
                 }
+
             } catch (error) {
-                if(loginFeedback) {
-                    loginFeedback.textContent = error.message || 'Error al iniciar sesión';
-                    loginFeedback.className = 'feedback-message error';
-                    loginFeedback.style.display = 'block';
-                }
-                if(loginButton) {
-                    loginButton.disabled = false;
-                    loginButton.textContent = 'Entrar';
-                }
+                feedback.textContent = 'Error de conexión.';
+                feedback.className = 'feedback-message error';
+                feedback.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
             }
         });
     }

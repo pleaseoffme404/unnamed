@@ -1,7 +1,7 @@
 const pool = require('../services/db.service');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
-const { sendEmail } = require('../services/email.service');
+const { enviarCorreo, templates } = require('../services/email.service');
 const { saveImage, deleteImage } = require('./utils.controller');
 const firebaseAdmin = require('../services/firebase.service');
 
@@ -53,8 +53,7 @@ const login = async (req, res) => {
 
 const loginMobile = async (req, res) => {
     const { boleta, password } = req.body;
-    console.log(`Login Móvil: ${boleta}`);
-
+    
     let connection;
     try {
         connection = await pool.getConnection();
@@ -97,7 +96,6 @@ const loginMobile = async (req, res) => {
         res.status(200).json({ success: true, message: 'Bienvenido', data: userData });
 
     } catch (error) {
-        console.error(error);
         res.status(500).json({ success: false, message: 'Error interno.' });
     } finally {
         if (connection) connection.release();
@@ -106,9 +104,6 @@ const loginMobile = async (req, res) => {
 
 const sendEmailCode = async (req, res) => {
     const idUsuario = req.user ? req.user.id_usuario : null;
-    
-    console.log(`[EMAIL] Enviando código a usuario ID: ${idUsuario}`);
-
     if (!idUsuario) return res.status(401).json({ success: false, message: 'Usuario no identificado.' });
 
     let connection;
@@ -130,13 +125,10 @@ const sendEmailCode = async (req, res) => {
             <p>Ingrésalo en la aplicación para continuar.</p>
         `;
 
-        await sendEmail(correo, 'Código de Verificación', html);
-        
-        console.log('   > Código enviado.');
+        await enviarCorreo(correo, 'Código de Verificación', html);
         res.status(200).json({ success: true, message: 'Código enviado al correo.' });
 
     } catch (error) {
-        console.error('Error envío:', error);
         res.status(500).json({ success: false, message: 'Error al enviar código.' });
     } finally {
         if (connection) connection.release();
@@ -146,8 +138,6 @@ const sendEmailCode = async (req, res) => {
 const verifyEmailCode = async (req, res) => {
     const idUsuario = req.user ? req.user.id_usuario : null;
     const { code } = req.body;
-
-    console.log(`🔑 [EMAIL] Verificando código para usuario ID: ${idUsuario}`);
 
     if(!code) return res.status(400).json({success: false, message: 'Código requerido'});
     if (!idUsuario) return res.status(401).json({ success: false, message: 'Usuario no identificado.' });
@@ -163,7 +153,6 @@ const verifyEmailCode = async (req, res) => {
         if(user.length === 0) return res.status(404).json({success: false, message: 'Usuario no encontrado'});
 
         if(user[0].codigo_verificacion_email !== code) {
-            console.log('  Código incorrecto.');
             return res.status(400).json({ success: false, message: 'Código incorrecto.' });
         }
 
@@ -172,11 +161,9 @@ const verifyEmailCode = async (req, res) => {
             [idUsuario]
         );
 
-        console.log(' Correo verificado.');
         res.status(200).json({ success: true, message: 'Correo verificado correctamente.' });
 
     } catch (error) {
-        console.error(' Error verificación:', error);
         res.status(500).json({ success: false, message: 'Error interno.' });
     } finally {
         if (connection) connection.release();
@@ -301,9 +288,12 @@ const forgotPassword = async (req, res) => {
     let connection;
     try {
         connection = await pool.getConnection();
-        const [users] = await connection.query('SELECT id_usuario FROM usuarios WHERE correo_electronico = ? AND rol = "admin"', [correo]);
+        const [users] = await connection.query(
+            'SELECT id_usuario, rol FROM usuarios WHERE correo_electronico = ?', 
+            [correo]
+        );
         
-        if (users.length === 0) return res.status(200).json({ success: true, message: 'Procesando solicitud.' });
+        if (users.length === 0) return res.status(200).json({ success: true, message: 'Si el correo existe, se han enviado las instrucciones.' });
         
         const userId = users[0].id_usuario;
         const token = crypto.randomBytes(32).toString('hex');
@@ -311,11 +301,13 @@ const forgotPassword = async (req, res) => {
 
         await connection.query('UPDATE usuarios SET reset_token = ?, reset_expires = ? WHERE id_usuario = ?', [token, expireDate, userId]);
 
-        const resetLink = `${process.env.APP_URL || 'http://localhost:1200'}/recuperar.html?role=admin&token=${token}`;
+        const resetLink = `${process.env.APP_URL || 'http://localhost:1200'}/reset-password/index.html?token=${token}`;
+        
         await enviarCorreo(correo, 'Restablecer Contraseña Admin', templates.recovery(resetLink, '#5865F2'));
 
-        res.status(200).json({ success: true, message: 'Procesando solicitud.' });
+        res.status(200).json({ success: true, message: 'Si el correo existe, se han enviado las instrucciones.' });
     } catch (error) {
+        console.error(error);
         res.status(500).json({ success: false, message: 'Error interno' });
     } finally {
         if (connection) connection.release();
@@ -344,6 +336,7 @@ const resetPassword = async (req, res) => {
         if (connection) connection.release();
     }
 };
+
 module.exports = {
     login,
     loginMobile,

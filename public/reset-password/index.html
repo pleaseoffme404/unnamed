@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nueva Contraseña</title>
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/header.css">
+</head>
+<body class="login-body">
+    <main class="login-container">
+        <h1>Restablecer Contraseña</h1>
+        <p>Crea tu nueva contraseña.</p>
+        
+        <div id="reset-feedback" class="feedback-message" style="display: none;"></div>
+
+        <form id="reset-form" class="form-container">
+            <input type="hidden" id="token">
+            
+            <div class="form-group">
+                <label for="p1">Nueva Contraseña:</label>
+                <input type="password" id="p1" required minlength="6">
+            </div>
+            
+            <div class="form-group">
+                <label for="p2">Confirmar Contraseña:</label>
+                <input type="password" id="p2" required minlength="6">
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Guardar Cambios</button>
+        </form>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+            
+            const feedback = document.getElementById('reset-feedback');
+            const btn = document.querySelector('button');
+
+            if (!token) {
+                feedback.textContent = ' Enlace incompleto. Debes acceder desde el correo electrónico.';
+                feedback.style.display = 'block';
+                feedback.style.color = 'red';
+                feedback.style.fontWeight = 'bold';
+                
+                document.getElementById('p1').disabled = true;
+                document.getElementById('p2').disabled = true;
+                btn.disabled = true;
+                return; 
+            }
+
+            const form = document.getElementById('reset-form');
+            
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const p1 = document.getElementById('p1').value;
+                const p2 = document.getElementById('p2').value;
+
+                if(p1 !== p2) {
+                    feedback.textContent = 'Las contraseñas no coinciden.';
+                    feedback.style.color = 'red';
+                    feedback.style.display = 'block';
+                    return;
+                }
+
+                btn.disabled = true;
+                btn.textContent = 'Guardando...';
+
+                try {
+                    const res = await fetch('/api/auth/reset-password', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token, password: p1 })
+                    });
+                    const data = await res.json();
+
+                    if(data.success) {
+                        feedback.textContent = '¡Contraseña actualizada! Redirigiendo...';
+                        feedback.style.color = 'green';
+                        feedback.style.display = 'block';
+                        setTimeout(() => window.location.href = '/index.html', 2000);
+                    } else {
+                        feedback.textContent = data.message || 'Error al cambiar contraseña.';
+                        feedback.style.color = 'red';
+                        feedback.style.display = 'block';
+                        btn.disabled = false;
+                        btn.textContent = 'Guardar Cambios';
+                    }
+                } catch(err) {
+                    console.error(err);
+                    btn.disabled = false;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

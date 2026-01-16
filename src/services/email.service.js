@@ -1,4 +1,12 @@
 const nodemailer = require('nodemailer');
+require('dotenv').config();
+
+console.log('--- [EMAIL SERVICE DEBUG] Configuración Cargada ---');
+console.log('HOST:', process.env.SMTP_HOST);
+console.log('USER:', process.env.SMTP_USER);
+console.log('PORT:', process.env.SMTP_PORT);
+console.log('SECURE:', process.env.SMTP_SECURE);
+console.log('---------------------------------------------------');
 
 const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
@@ -7,20 +15,42 @@ const transporter = nodemailer.createTransport({
     auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS
+    },
+    tls: {
+        rejectUnauthorized: false
+    }
+});
+
+transporter.verify((error, success) => {
+    if (error) {
+        console.error('[EMAIL SERVICE] Error Fatal al conectar con SMTP:', error);
+    } else {
+        console.log('[EMAIL SERVICE] Conexión SMTP establecida y lista.');
     }
 });
 
 const enviarCorreo = async (destinatario, asunto, htmlBody) => {
+    console.log(`[EMAIL SERVICE] Intentando enviar a: ${destinatario}`);
+    
     try {
-        await transporter.sendMail({
+        const info = await transporter.sendMail({
             from: `"Notificaciones Escolares" <${process.env.SMTP_USER}>`,
             to: destinatario,
             subject: asunto,
             html: htmlBody
         });
-        console.log(`📧 Enviado a ${destinatario}: ${asunto}`);
+        
+        console.log(`[EMAIL SERVICE] Enviado Correctamente.`);
+        console.log(`   ID Mensaje: ${info.messageId}`);
+        console.log(`   Respuesta Servidor: ${info.response}`);
+        return true;
+
     } catch (error) {
-        console.error('❌ Error envío correo:', error);
+        console.error('[EMAIL SERVICE] FALLÓ EL ENVÍO:');
+        console.error('   Código:', error.code);
+        console.error('   Mensaje:', error.message);
+        console.error('   Detalles:', JSON.stringify(error, null, 2));
+        return false;
     }
 };
 
@@ -66,7 +96,7 @@ const templates = {
                     Se ha registrado la entrada de <strong>${nombre}</strong> a las instalaciones de la escuela.
                 </p>
                 <div style="background-color: #f0fdf4; border-left: 4px solid #23A559; padding: 15px; margin: 20px 0;">
-                    <p style="margin:0; color: #166534; font-weight: bold;">🕒 Hora de registro: ${hora}</p>
+                    <p style="margin:0; color: #166534; font-weight: bold;">Hora de registro: ${hora}</p>
                 </div>
                 <a href="${process.env.APP_URL || '#'}/portal" style="display: inline-block; background-color: #ff8c69; color: white; text-decoration: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; margin-top: 10px;">Ver en el Portal</a>
             </div>
@@ -83,7 +113,7 @@ const templates = {
                     El alumno <strong>${nombre}</strong> ha salido de la escuela.
                 </p>
                 <div style="background-color: #eff6ff; border-left: 4px solid #5865F2; padding: 15px; margin: 20px 0;">
-                    <p style="margin:0; color: #1e40af; font-weight: bold;">🕒 Hora de salida: ${hora}</p>
+                    <p style="margin:0; color: #1e40af; font-weight: bold;">Hora de salida: ${hora}</p>
                 </div>
             </div>
             <div style="${footerStyle}">Sistema de Asistencia Escolar</div>
@@ -99,7 +129,7 @@ const templates = {
                     <strong>${nombre}</strong> ha ingresado a la escuela después de la hora límite establecida.
                 </p>
                 <div style="background-color: #fefce8; border-left: 4px solid #F0B132; padding: 15px; margin: 20px 0;">
-                    <p style="margin:0; color: #854d0e; font-weight: bold;">🕒 Hora de registro: ${hora}</p>
+                    <p style="margin:0; color: #854d0e; font-weight: bold;">Hora de registro: ${hora}</p>
                 </div>
             </div>
             <div style="${footerStyle}">Sistema de Asistencia Escolar</div>
@@ -122,7 +152,6 @@ const templates = {
             <div style="${footerStyle}">Sistema de Asistencia Escolar</div>
         </div>
     `,
-    
     recovery: (link, color = '#5865F2') => `
         <div style="${baseStyle}">
             <div style="${headerStyle(color)}">
