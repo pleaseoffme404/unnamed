@@ -11,7 +11,8 @@ const getAllTutores = async (req, res) => {
         const [rows] = await connection.query(
             `SELECT 
                 t.id_perfil_tutor, t.nombres, t.apellido_paterno, t.apellido_materno, 
-                t.imagen_url, t.notificaciones,
+                t.imagen_url, 
+                t.notify_entrada, t.notify_salida, t.notify_retardo, t.notify_falta,
                 u.id_usuario, u.correo_electronico, u.telefono, u.esta_activo,
                 (SELECT COUNT(*) FROM alumnos_tutores at WHERE at.id_perfil_tutor_fk = t.id_perfil_tutor) as total_alumnos
             FROM perfil_tutor t
@@ -20,6 +21,7 @@ const getAllTutores = async (req, res) => {
         );
         res.status(200).json({ success: true, data: rows });
     } catch (error) {
+        console.error(error);
         res.status(500).json({ success: false, message: 'Error interno.' });
     } finally {
         if (connection) connection.release();
@@ -62,7 +64,7 @@ const getTutorById = async (req, res) => {
 const registerTutor = async (req, res) => {
     const { 
         nombres, apellido_paterno, apellido_materno, 
-        correo_electronico, telefono, contrasena, notificaciones,
+        correo_electronico, telefono, contrasena,
         alumnos 
     } = req.body;
 
@@ -103,8 +105,10 @@ const registerTutor = async (req, res) => {
         );
 
         const [tutorRes] = await connection.query(
-            'INSERT INTO perfil_tutor (id_usuario_fk, nombres, apellido_paterno, apellido_materno, notificaciones, imagen_url) VALUES (?, ?, ?, ?, ?, ?)',
-            [userRes.insertId, nombres, apellido_paterno, apellido_materno, notificaciones || 'correo', imageUrl]
+            `INSERT INTO perfil_tutor 
+            (id_usuario_fk, nombres, apellido_paterno, apellido_materno, imagen_url, notify_entrada, notify_salida, notify_retardo, notify_falta) 
+            VALUES (?, ?, ?, ?, ?, 1, 1, 1, 1)`,
+            [userRes.insertId, nombres, apellido_paterno, apellido_materno, imageUrl]
         );
 
         if (alumnos) {
@@ -140,7 +144,7 @@ const updateTutor = async (req, res) => {
     const { id } = req.params;
     const { 
         nombres, apellido_paterno, apellido_materno, 
-        correo_electronico, telefono, contrasena, notificaciones, esta_activo, 
+        correo_electronico, telefono, contrasena, esta_activo, 
         imagen_url_actual,
         alumnos 
     } = req.body;
@@ -178,12 +182,14 @@ const updateTutor = async (req, res) => {
 
         if (req.file) {
             newImageUrl = await saveImage(req.file, 'tutores', `${nombres} ${apellido_paterno}`);
-            if (imagen_url_actual) await deleteImage(imagen_url_actual);
+            if (imagen_url_actual && imagen_url_actual !== '/assets/img/default-avatar.png') {
+                await deleteImage(imagen_url_actual);
+            }
         }
 
         await connection.query(
-            `UPDATE perfil_tutor SET nombres=?, apellido_paterno=?, apellido_materno=?, notificaciones=?, imagen_url=? WHERE id_perfil_tutor=?`,
-            [nombres, apellido_paterno, apellido_materno, notificaciones, newImageUrl, id]
+            `UPDATE perfil_tutor SET nombres=?, apellido_paterno=?, apellido_materno=?, imagen_url=? WHERE id_perfil_tutor=?`,
+            [nombres, apellido_paterno, apellido_materno, newImageUrl, id]
         );
 
         await connection.query(
@@ -229,7 +235,9 @@ const deleteTutor = async (req, res) => {
         if (rows.length === 0) return res.status(404).json({ success: false });
 
         await connection.query('DELETE FROM usuarios WHERE id_usuario = ?', [rows[0].id_usuario_fk]);
-        if (rows[0].imagen_url) await deleteImage(rows[0].imagen_url);
+        if (rows[0].imagen_url && rows[0].imagen_url !== '/assets/img/default-avatar.png') {
+            await deleteImage(rows[0].imagen_url);
+        }
 
         res.status(200).json({ success: true, message: 'Eliminado.' });
     } catch (error) {
@@ -293,7 +301,9 @@ const registerTutoresMasivo = async (req, res) => {
                         );
 
                         const [tutorRes] = await connection.query(
-                            'INSERT INTO perfil_tutor (id_usuario_fk, nombres, apellido_paterno, apellido_materno, notificaciones) VALUES (?, ?, ?, ?, "correo")',
+                            `INSERT INTO perfil_tutor 
+                            (id_usuario_fk, nombres, apellido_paterno, apellido_materno, notify_entrada, notify_salida, notify_retardo, notify_falta) 
+                            VALUES (?, ?, ?, ?, 1, 1, 1, 1)`,
                             [userRes.insertId, nombres, apellido_paterno, apellido_materno]
                         );
 
@@ -328,6 +338,10 @@ const registerTutoresMasivo = async (req, res) => {
             }
         });
 };
+
+/* =========================================================
+   FUNCIONES APP MÓVIL / PORTAL (TUTORES)
+   ========================================================= */
 
 const loginTutorApp = async (req, res) => {
     const { correo, password } = req.body;
@@ -372,8 +386,6 @@ const loginTutorApp = async (req, res) => {
     }
 };
 
-
-
 const getTutorAppAlumnos = async (req, res) => {
     if (!req.session.user || !req.session.user.id_perfil_tutor) {
         return res.status(401).json({ success: false, message: 'No autorizado' });
@@ -414,10 +426,11 @@ const getTutorAppAlumnos = async (req, res) => {
 const logoutTutor = (req, res) => {
     req.session.destroy((err) => {
         if (err) return res.status(500).json({ success: false });
-        res.clearCookie('connect.sid');
+        res.clearCookie('sid_escolar'); 
         res.status(200).json({ success: true, message: 'Logout exitoso' });
     });
 };
+
 const getTutorAppAlumnoDetalle = async (req, res) => {
     if (!req.session.user || !req.session.user.id_perfil_tutor) {
         return res.status(401).json({ success: false, message: 'No autorizado' });
@@ -454,8 +467,8 @@ const getTutorAppAlumnoDetalle = async (req, res) => {
 
         res.status(200).json({ 
             success: true, 
-            data: {
-                info: alumno[0],
+            data: { 
+                info: alumno[0], 
                 historial: historial
             } 
         });
@@ -467,6 +480,7 @@ const getTutorAppAlumnoDetalle = async (req, res) => {
         if (connection) connection.release();
     }
 };
+
 const getTutorAppProfile = async (req, res) => {
     if (!req.session.user || !req.session.user.id_perfil_tutor) {
         return res.status(401).json({ success: false, message: 'No autorizado' });
@@ -566,6 +580,7 @@ const updateTutorAppProfile = async (req, res) => {
         if (connection) connection.release();
     }
 };
+
 module.exports = {
     getAllTutores,
     getTutorById,
@@ -578,7 +593,5 @@ module.exports = {
     getTutorAppAlumnos,
     logoutTutor,
     getTutorAppAlumnoDetalle,
-    updateTutorAppProfile,
-    getTutorAppProfile
-
+    updateTutorAppProfile
 };
