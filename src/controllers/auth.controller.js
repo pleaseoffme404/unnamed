@@ -6,46 +6,68 @@ const { saveImage, deleteImage } = require('./utils.controller');
 const firebaseAdmin = require('../services/firebase.service');
 
 const login = async (req, res) => {
-    const { correo, password } = req.body;
+    const correo = req.body.correo || req.body.email; 
+    const { password } = req.body;
+
+    console.log(`[LOGIN ADMIN] Intento para: ${correo}`);
 
     if (!correo || !password) {
-        return res.status(400).json({ success: false, message: 'Faltan datos.' });
+        console.log('[LOGIN ADMIN] Faltan datos.');
+        return res.status(400).json({ success: false, message: 'Ingrese correo y contraseña.' });
     }
 
     let connection;
     try {
         connection = await pool.getConnection();
+        
         const [rows] = await connection.query(
             `SELECT u.*, p.nombre_completo, p.imagen_url 
             FROM usuarios u
-            JOIN perfil_admin p ON u.id_usuario = p.id_usuario_fk
+            LEFT JOIN perfil_admin p ON u.id_usuario = p.id_usuario_fk
             WHERE u.correo_electronico = ?`, 
             [correo]
         );
 
-        if (rows.length === 0) return res.status(401).json({ success: false, message: 'Credenciales inválidas.' });
+        if (rows.length === 0) {
+            console.log('[LOGIN ADMIN] Usuario no encontrado en BD.');
+            return res.status(401).json({ success: false, message: 'Credenciales inválidas.' });
+        }
 
         const user = rows[0];
-        if (user.rol !== 'admin') return res.status(403).json({ success: false, message: 'Acceso denegado.' });
+
+        if (user.rol !== 'admin') {
+            console.log(`[LOGIN ADMIN] Rol incorrecto: ${user.rol}`);
+            return res.status(403).json({ success: false, message: 'No tienes permisos de administrador.' });
+        }
 
         const isMatch = await bcrypt.compare(password, user.contrasena_hash);
-        if (!isMatch) return res.status(401).json({ success: false, message: 'Credenciales inválidas.' });
+        
+        if (!isMatch) {
+            console.log('[LOGIN ADMIN] Contraseña incorrecta.');
+            return res.status(401).json({ success: false, message: 'Credenciales inválidas.' });
+        }
 
         req.session.user = {
             id: user.id_usuario,
+            id_usuario: user.id_usuario, 
             email: user.correo_electronico,
             rol: user.rol,
-            nombre: user.nombre_completo,
+            nombre: user.nombre_completo || 'Administrador',
             imagen: user.imagen_url
         };
 
         req.session.save(err => {
-            if (err) return res.status(500).json({ success: false, message: 'Error sesión.' });
+            if (err) {
+                console.error('[LOGIN ADMIN] Error guardando sesión:', err);
+                return res.status(500).json({ success: false, message: 'Error de sesión.' });
+            }
+            console.log('[LOGIN ADMIN] Éxito. Sesión creada.');
             res.status(200).json({ success: true, message: 'Bienvenido.', user: req.session.user });
         });
 
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Error interno.' });
+        console.error('[LOGIN ADMIN] Error interno:', error);
+        res.status(500).json({ success: false, message: 'Error interno del servidor.' });
     } finally {
         if (connection) connection.release();
     }

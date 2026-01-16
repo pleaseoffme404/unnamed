@@ -1,47 +1,58 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const forgotForm = document.getElementById('forgot-password-form');
     
-    if (forgotForm) {
-        forgotForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+    const loginForm = document.getElementById('login-form');
+    const feedback = document.getElementById('login-feedback'); 
+
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); 
             
-            const emailInput = document.getElementById('email-forgot');
-            const feedback = document.getElementById('forgot-feedback');
-            const btn = forgotForm.querySelector('button');
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const btn = loginForm.querySelector('button');
             const originalText = btn.textContent;
 
             btn.disabled = true;
-            btn.textContent = 'Enviando...';
-            feedback.style.display = 'none';
+            btn.textContent = 'Entrando...';
+            if(feedback) {
+                feedback.style.display = 'none';
+                feedback.className = 'feedback-message';
+            }
 
             try {
-                const res = await fetch('/api/auth/forgot-password', {
+                const res = await fetch('/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ correo: emailInput.value })
+                    body: JSON.stringify({ correo: email, password: password })
                 });
 
                 const data = await res.json();
 
                 if (data.success) {
-                    feedback.textContent = 'Si el correo existe, se han enviado las instrucciones.';
-                    feedback.className = 'feedback-message success';
-                    feedback.style.display = 'block';
-                    forgotForm.reset();
+                    if (data.user.rol === 'admin') {
+                        window.location.href = '/dashboard/index.html';
+                    } else {
+                        showError(feedback, 'Este portal es solo para administradores.');
+                    }
                 } else {
-                    feedback.textContent = data.message || 'Error al procesar solicitud.';
-                    feedback.className = 'feedback-message error';
-                    feedback.style.display = 'block';
+                    showError(feedback, data.message || 'Credenciales incorrectas');
                 }
-
             } catch (error) {
-                feedback.textContent = 'Error de conexión.';
-                feedback.className = 'feedback-message error';
-                feedback.style.display = 'block';
+                console.error(error);
+                showError(feedback, 'Error de conexión con el servidor.');
             } finally {
                 btn.disabled = false;
                 btn.textContent = originalText;
             }
         });
     }
+
+    function showError(element, message) {
+        if(element) {
+            element.textContent = message;
+            element.classList.add('error'); 
+            element.style.display = 'block';
+        }
+    }
+
 });

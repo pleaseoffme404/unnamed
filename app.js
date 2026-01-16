@@ -42,6 +42,7 @@ app.use(session({
 }));
 
 app.use('/api', allApiRoutes);
+require('./src/services/cron.service');
 
 app.use(express.static(path.join(__dirname, 'public')));
 
