@@ -297,88 +297,53 @@ const registerAdmin = async (req, res) => {
 };
 
 const forgotPassword = async (req, res) => {
-    const { correo_electronico } = req.body;
+    const { correo } = req.body;
     let connection;
-
     try {
         connection = await pool.getConnection();
-        const [users] = await connection.query('SELECT id_usuario FROM usuarios WHERE correo_electronico = ?', [correo_electronico]);
-
-        if (users.length === 0) {
-            return res.status(200).json({ success: true, message: 'Si existe una cuenta, se enviará un correo de recuperación.' });
-        }
-
-        const user = users[0];
+        const [users] = await connection.query('SELECT id_usuario FROM usuarios WHERE correo_electronico = ? AND rol = "admin"', [correo]);
+        
+        if (users.length === 0) return res.status(200).json({ success: true, message: 'Procesando solicitud.' });
+        
+        const userId = users[0].id_usuario;
         const token = crypto.randomBytes(32).toString('hex');
-        const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-        const expira = new Date(Date.now() + 3600000); 
+        const expireDate = new Date(Date.now() + 3600000);
 
-        await connection.query('DELETE FROM password_reset_tokens WHERE id_usuario_fk = ?', [user.id_usuario]);
-        await connection.query(
-            'INSERT INTO password_reset_tokens (id_usuario_fk, token, expira_en) VALUES (?, ?, ?)',
-            [user.id_usuario, tokenHash, expira]
-        );
+        await connection.query('UPDATE usuarios SET reset_token = ?, reset_expires = ? WHERE id_usuario = ?', [token, expireDate, userId]);
 
-        const publicUrl = process.env.PUBLIC_URL || 'https://endware.bullnodes.com';
-        const resetLink = `${publicUrl}/reset-password?token=${token}`;
-        const emailHtml = `<p>Para restablecer tu contraseña, haz clic aquí:</p><a href="${resetLink}">${resetLink}</a>`;
+        const resetLink = `${process.env.APP_URL || 'http://localhost:1200'}/recuperar.html?role=admin&token=${token}`;
+        await enviarCorreo(correo, 'Restablecer Contraseña Admin', templates.recovery(resetLink, '#5865F2'));
 
-        await sendEmail(correo_electronico, 'Recuperar Contraseña', emailHtml);
-
-        res.status(200).json({ success: true, message: 'Si existe una cuenta, se enviará un correo de recuperación.' });
-
+        res.status(200).json({ success: true, message: 'Procesando solicitud.' });
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Error interno.' });
+        res.status(500).json({ success: false, message: 'Error interno' });
     } finally {
         if (connection) connection.release();
     }
 };
 
 const resetPassword = async (req, res) => {
-    const { token, nuevaContrasena } = req.body;
-
-    if (!token || !nuevaContrasena) {
-        return res.status(400).json({ success: false, message: 'Token y contraseña requeridos.' });
-    }
-
-    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const { token, password } = req.body;
     let connection;
     try {
         connection = await pool.getConnection();
-        await connection.beginTransaction();
+        const [users] = await connection.query('SELECT id_usuario FROM usuarios WHERE reset_token = ? AND reset_expires > NOW()', [token]);
 
-        const [tokens] = await connection.query(
-            'SELECT * FROM password_reset_tokens WHERE token = ? AND expira_en > NOW()',
-            [tokenHash]
-        );
+        if (users.length === 0) return res.status(400).json({ success: false, message: 'Enlace inválido o expirado.' });
 
-        if (tokens.length === 0) {
-            await connection.rollback();
-            return res.status(400).json({ success: false, message: 'Token inválido o expirado.' });
-        }
-
-        const tokenData = tokens[0];
+        const userId = users[0].id_usuario;
         const salt = await bcrypt.genSalt(10);
-        const contrasena_hash = await bcrypt.hash(nuevaContrasena, salt);
+        const hash = await bcrypt.hash(password, salt);
 
-        await connection.query(
-            'UPDATE usuarios SET contrasena_hash = ? WHERE id_usuario = ?',
-            [contrasena_hash, tokenData.id_usuario_fk]
-        );
+        await connection.query('UPDATE usuarios SET contrasena_hash = ?, reset_token = NULL, reset_expires = NULL WHERE id_usuario = ?', [hash, userId]);
 
-        await connection.query('DELETE FROM password_reset_tokens WHERE id = ?', [tokenData.id]);
-
-        await connection.commit();
         res.status(200).json({ success: true, message: 'Contraseña actualizada.' });
-
     } catch (error) {
-        if (connection) await connection.rollback();
-        res.status(500).json({ success: false, message: 'Error interno.' });
+        res.status(500).json({ success: false, message: 'Error interno' });
     } finally {
         if (connection) connection.release();
     }
 };
-
 module.exports = {
     login,
     loginMobile,

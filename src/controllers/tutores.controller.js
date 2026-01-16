@@ -581,6 +581,33 @@ const updateTutorAppProfile = async (req, res) => {
     }
 };
 
+const forgotPassword = async (req, res) => {
+    const { correo } = req.body;
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        const [users] = await connection.query('SELECT id_usuario FROM usuarios WHERE correo_electronico = ? AND rol = "tutor"', [correo]);
+        
+        if (users.length === 0) return res.status(200).json({ success: true, message: 'Si el correo existe, recibirás instrucciones.' });
+        
+        const userId = users[0].id_usuario;
+        const token = crypto.randomBytes(32).toString('hex');
+        const expireDate = new Date(Date.now() + 3600000); 
+
+        await connection.query('UPDATE usuarios SET reset_token = ?, reset_expires = ? WHERE id_usuario = ?', [token, expireDate, userId]);
+
+        const resetLink = `${process.env.APP_URL || 'http://localhost:1200'}/recuperar.html?role=tutor&token=${token}`;
+        await enviarCorreo(correo, 'Recuperación de Contraseña', templates.recovery(resetLink, '#ff8c69'));
+
+        res.status(200).json({ success: true, message: 'Si el correo existe, recibirás instrucciones.' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Error interno' });
+    } finally {
+        if (connection) connection.release();
+    }
+};
+
 module.exports = {
     getAllTutores,
     getTutorById,
@@ -593,5 +620,6 @@ module.exports = {
     getTutorAppAlumnos,
     logoutTutor,
     getTutorAppAlumnoDetalle,
-    updateTutorAppProfile
+    updateTutorAppProfile,
+    forgotPassword
 };

@@ -18,9 +18,9 @@ const enviarCorreo = async (destinatario, asunto, htmlBody) => {
             subject: asunto,
             html: htmlBody
         });
-        console.log(`Enviado a ${destinatario}: ${asunto}`);
+        console.log(`📧 Enviado a ${destinatario}: ${asunto}`);
     } catch (error) {
-        console.error(' Error envío correo:', error);
+        console.error('❌ Error envío correo:', error);
     }
 };
 
@@ -118,6 +118,29 @@ const templates = {
                     <p style="margin:0; color: #991b1b; font-weight: bold;">📅 Fecha: ${fecha}</p>
                 </div>
                 <p style="font-size: 14px; color: #8c8c8c;">Si consideras que esto es un error, por favor contacta a la administración.</p>
+            </div>
+            <div style="${footerStyle}">Sistema de Asistencia Escolar</div>
+        </div>
+    `,
+    
+    recovery: (link, color = '#5865F2') => `
+        <div style="${baseStyle}">
+            <div style="${headerStyle(color)}">
+                <h1 style="margin:0; font-size: 24px;">Recuperar Contraseña</h1>
+            </div>
+            <div style="${contentStyle}">
+                <p style="font-size: 16px; margin-bottom: 20px;">Hola,</p>
+                <p style="font-size: 16px; line-height: 1.5;">
+                    Hemos recibido una solicitud para restablecer tu contraseña.
+                </p>
+                <p style="font-size: 16px; line-height: 1.5;">
+                    Haz clic en el siguiente botón para crear una nueva contraseña:
+                </p>
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="${link}" style="background-color: ${color}; color: white; text-decoration: none; padding: 12px 25px; border-radius: 8px; font-weight: bold; font-size: 16px;">Restablecer Contraseña</a>
+                </div>
+                <p style="font-size: 12px; color: #999;">Este enlace es válido por 1 hora.</p>
+                <p style="font-size: 12px; color: #999;">Si no solicitaste este cambio, puedes ignorar este correo.</p>
             </div>
             <div style="${footerStyle}">Sistema de Asistencia Escolar</div>
         </div>
