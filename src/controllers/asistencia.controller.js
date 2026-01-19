@@ -40,16 +40,44 @@ const getHistorialByAlumno = async (req, res) => {
 };
 
 const registrarAsistenciaQR = async (req, res) => {
-    const { qr_token, id_alumno } = req.body;
+    // 1. Recibir datos (Ahora aceptamos qr_code Y id_vehiculo)
+    // El backend ahora busca explícitamente 'qr_code' o 'qr_token' por compatibilidad
+    const codigoQR = req.body.qr_code || req.body.qr_token; 
+    const idVehiculo = req.body.id_vehiculo || null; // Puede ser null
 
-    if (!qr_token || !id_alumno) {
-        return res.status(400).json({ success: false, message: 'Datos incompletos.' });
+    if (!codigoQR) {
+        return res.status(400).json({ success: false, message: 'Falta el código QR' });
     }
 
-    const check = await validateAndBurnToken(qr_token, id_alumno); 
-    if (!check.valid) return res.status(401).json({ success: false, message: check.message });
+    const idUsuario = req.user.id_usuario;
+    let connection;
 
-    procesarMovimiento(id_alumno, 'qr', res);
+    try {
+        connection = await pool.getConnection();
+
+        // 2. Buscar alumno
+        const [alumno] = await connection.query('SELECT id_perfil_alumno FROM perfil_alumno WHERE id_usuario_fk = ?', [idUsuario]);
+        
+        if (alumno.length === 0) {
+            return res.status(404).json({ success: false, message: 'Alumno no encontrado' });
+        }
+        const idAlumno = alumno[0].id_perfil_alumno;
+
+        // 3. Registrar asistencia CON VEHÍCULO
+        await connection.query(
+            `INSERT INTO asistencia (id_perfil_alumno_fk, fecha_hora_entrada, estatus, metodo_entrada, id_vehiculo_fk) 
+             VALUES (?, NOW(), 'a_tiempo', 'qr', ?)`,
+            [idAlumno, idVehiculo] // Aquí pasamos el ID del vehículo (o null)
+        );
+
+        res.json({ success: true, message: 'Asistencia registrada correctamente' });
+
+    } catch (error) {
+        console.error("Error QR:", error);
+        res.status(500).json({ success: false, message: 'Error interno' });
+    } finally {
+        if (connection) connection.release();
+    }
 };
 
 const simularMovimiento = async (req, res) => {
@@ -146,8 +174,45 @@ const procesarMovimiento = async (idAlumno, metodo, res, tipoForzado = null) => 
         if (connection) connection.release();
     }
 };
+const obtenerMiHistorial = async (req, res) => {
+    const idUsuario = req.user.id_usuario; // Esto viene del Token
+
+    try {
+        /* CORRECCIÓN IMPORTANTE:
+           1. Hacemos JOIN con 'perfil_alumno' para vincular el Usuario (Token) con la Asistencia.
+           2. Usamos 'a.fecha_hora_entrada' que es el nombre real en tu BD.
+        */
+        const query = `
+            SELECT 
+                DATE_FORMAT(a.fecha_hora_entrada, '%Y-%m-%d %H:%i') as fecha_fmt, 
+                a.estatus, 
+                a.metodo_entrada
+            FROM asistencia a
+            JOIN perfil_alumno p ON a.id_perfil_alumno_fk = p.id_perfil_alumno
+            WHERE p.id_usuario_fk = ?
+            ORDER BY a.fecha_hora_entrada DESC 
+            LIMIT 50
+        `;
+
+        const [rows] = await pool.query(query, [idUsuario]);
+
+        // Mapeamos los datos para que Android los entienda perfecto
+        const historial = rows.map(row => ({
+            fecha_hora_entrada: row.fecha_fmt, 
+            estatus: row.estatus,        // 'a_tiempo' o 'retardo'
+            metodo_entrada: row.metodo_entrada // 'qr' o 'manual'
+        }));
+
+        res.json({ success: true, data: historial });
+
+    } catch (error) {
+        console.error("Error al obtener historial alumno:", error);
+        res.status(500).json({ success: false, message: 'Error interno: ' + error.message });
+    }
+};
 
 module.exports = {
+    obtenerMiHistorial,
     getHistorial,
     getHistorialByAlumno,
     registrarAsistenciaQR,

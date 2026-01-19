@@ -1,3 +1,4 @@
+const jwt = require('jsonwebtoken');
 const pool = require('../services/db.service');
 
 const isAuthenticated = async (req, res, next) => {
@@ -7,57 +8,37 @@ const isAuthenticated = async (req, res, next) => {
     }
 
     const authHeader = req.headers['authorization'];
-    if (authHeader) {
+    if (authHeader && authHeader.startsWith('Bearer ')) {
         const token = authHeader.split(' ')[1];
 
-        if (!token) {
+        if (!token || token === 'null') {
             return res.status(401).json({ success: false, message: 'Token no proporcionado.' });
         }
 
         try {
-            const connection = await pool.getConnection();
-            const [rows] = await connection.query(
-                'SELECT id_usuario, rol, esta_activo, correo_electronico FROM usuarios WHERE token_sesion_actual = ?',
-                [token]
-            );
-            connection.release();
+            const secret = process.env.JWT_SECRET || 'tu_super_secreto_escolar';
+            const decoded = jwt.verify(token, secret);
 
-            if (rows.length === 0) {
-                return res.status(401).json({ success: false, message: 'Sesion no valida.' });
-            }
-
-            const user = rows[0];
-            if (!user.esta_activo) {
-                return res.status(403).json({ success: false, message: 'Cuenta desactivada.' });
-            }
-
-            req.user = user;
+            req.user = decoded;
             return next();
 
         } catch (error) {
-            console.error(error);
-            return res.status(500).json({ success: false, message: 'Error de autenticacion.' });
+            console.error('[AUTH] Token inválido:', error.message);
+            return res.status(401).json({ success: false, message: 'Sesión expirada o inválida.' });
         }
     }
 
-    return res.status(401).json({ success: false, message: 'No autorizado. Sesion requerida.' });
+    return res.status(401).json({ success: false, message: 'No autorizado. Inicie sesión.' });
 };
 
 const isAdmin = (req, res, next) => {
     if (req.session && req.session.kiosk_locked) {
         const currentUrl = req.originalUrl || req.url;
-        
-        const allowedRoutes = [
-            '/kiosk/unlock',      
-            '/api/qr/',            
-            '/api/alumnos',        
-            '/api/asistencia/'     
-        ];
-
+        const allowedRoutes = ['/kiosk/unlock', '/api/qr/', '/api/alumnos', '/api/asistencia/'];
         const isAllowed = allowedRoutes.some(route => currentUrl.includes(route));
 
         if (!isAllowed) {
-            return res.status(403).json({ success: false, message: 'Sesion bloqueada en modo Kiosco.' });
+            return res.status(403).json({ success: false, message: 'Sesión bloqueada en modo Kiosco.' });
         }
     }
 
@@ -70,18 +51,11 @@ const isAdmin = (req, res, next) => {
 };
 
 const isTutor = (req, res, next) => {
-    if (req.session && req.session.rol === 'tutor') {
+    const role = (req.session && req.session.user) ? req.session.user.rol : (req.user ? req.user.rol : null);
+    
+    if (role === 'tutor') {
         return next();
     }
-
-    if (req.session && req.session.user && req.session.user.rol === 'tutor') {
-        return next();
-    }
-
-    if (req.user && req.user.rol === 'tutor') {
-        return next();
-    }
-
     return res.status(403).json({ success: false, message: 'Acceso denegado. Se requiere rol de Tutor.' });
 };
 

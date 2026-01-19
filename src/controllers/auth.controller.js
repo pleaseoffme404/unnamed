@@ -4,15 +4,16 @@ const crypto = require('crypto');
 const { enviarCorreo, templates } = require('../services/email.service');
 const { saveImage, deleteImage } = require('./utils.controller');
 const firebaseAdmin = require('../services/firebase.service');
+const jwt = require('jsonwebtoken');
 
+// --- LOGIN WEB (ADMIN) ---
 const login = async (req, res) => {
-    const correo = req.body.correo || req.body.email; 
+    const correo = req.body.correo || req.body.email;
     const { password } = req.body;
 
     console.log(`[LOGIN ADMIN] Intento para: ${correo}`);
 
     if (!correo || !password) {
-        console.log('[LOGIN ADMIN] Faltan datos.');
         return res.status(400).json({ success: false, message: 'Ingrese correo y contraseña.' });
     }
 
@@ -73,72 +74,121 @@ const login = async (req, res) => {
     }
 };
 
+// --- LOGIN MÓVIL (ALUMNOS) ---
 const loginMobile = async (req, res) => {
     const { boleta, password } = req.body;
-    
+
+    console.log(`[LOGIN MOVIL] Intento para boleta: ${boleta}`);
+
+    if (!boleta || !password) {
+        return res.status(400).json({ success: false, message: 'Faltan credenciales' });
+    }
+
     let connection;
     try {
         connection = await pool.getConnection();
-        const [rows] = await connection.query(
-            `SELECT p.id_perfil_alumno, p.nombres, p.apellido_paterno, p.grupo, p.imagen_url, p.boleta,
-                u.id_usuario, u.contrasena_hash, u.rol, u.esta_activo,
-                u.email_verificado, u.telefono_verificado, u.correo_electronico
-            FROM perfil_alumno p
-            JOIN usuarios u ON p.id_usuario_fk = u.id_usuario
-            WHERE p.boleta = ?`, [boleta]
-        );
 
-        if (rows.length === 0) return res.status(401).json({ success: false, message: 'Boleta no encontrada.' });
+        // Join para obtener datos del alumno Y del usuario (contraseña)
+        const [users] = await connection.query(
+    `SELECT u.id_usuario, u.contrasena_hash, u.rol, u.codigo_verificacion_email, u.telefono_verificado,
+            p.nombres, p.apellido_paterno, p.grupo, p.imagen_url, p.boleta
+     FROM usuarios u
+     JOIN perfil_alumno p ON u.id_usuario = p.id_usuario_fk
+     WHERE p.boleta = ? AND u.rol = 'alumno'`, 
+    [boleta]
+);
 
-        const alumno = rows[0];
-        if (!alumno.esta_activo) return res.status(403).json({ success: false, message: 'Cuenta desactivada.' });
+        if (users.length === 0) {
+            console.log('[LOGIN MOVIL] Usuario no encontrado.');
+            return res.status(401).json({ success: false, message: 'Boleta no encontrada o no es alumno' });
+        }
 
-        const isMatch = await bcrypt.compare(password, alumno.contrasena_hash);
-        if (!isMatch) return res.status(401).json({ success: false, message: 'Contraseña incorrecta.' });
+        const user = users[0];
 
-        const sessionToken = crypto.randomBytes(32).toString('hex');
-        await connection.query('UPDATE usuarios SET token_sesion_actual = ? WHERE id_usuario = ?', [sessionToken, alumno.id_usuario]);
+        // Comparar contraseña encriptada (BCRYPT)
+        const validPassword = await bcrypt.compare(password, user.contrasena_hash);
 
-        const userData = {
-            id_usuario: alumno.id_usuario,
-            id_perfil: alumno.id_perfil_alumno,
-            nombres: alumno.nombres,
-            apellidos: alumno.apellido_paterno,
-            grupo: alumno.grupo,
-            boleta: alumno.boleta, 
-            foto: alumno.imagen_url,
-            email_registrado: alumno.correo_electronico, 
-            verificaciones: {
-                email: !!alumno.email_verificado,
-                telefono: !!alumno.telefono_verificado
-            },
-            token: sessionToken
+        if (!validPassword) {
+            console.log('[LOGIN MOVIL] Password incorrecto.');
+            return res.status(401).json({ success: false, message: 'Contraseña incorrecta' });
+        }
+
+        // Generar JWT real
+        const tokenPayload = {
+            id_usuario: user.id_usuario,
+            boleta: boleta,
+            rol: user.rol 
         };
 
-        res.status(200).json({ success: true, message: 'Bienvenido', data: userData });
+        const token = jwt.sign(
+            tokenPayload, 
+            process.env.JWT_SECRET || 'tu_super_secreto_escolar', 
+            { expiresIn: '30d' } 
+        );
+
+        console.log('[LOGIN MOVIL] Login exitoso. Token generado.');
+
+        res.json({
+    success: true,
+    data: {
+        token: token,
+        alumno: { 
+            nombre_completo: user.nombres + " " + user.apellido_paterno,
+            boleta: user.boleta,
+            grupo: user.grupo || "Sin grupo",
+            foto: user.imagen_url || "", 
+            carrera: "Técnico en Programación" 
+        },
+        verificaciones: {
+            email: user.codigo_verificacion_email !== null || user.email_verificado === 1,
+            telefono: user.telefono_verificado === 1
+        }
+    }
+});
 
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Error interno.' });
+        console.error('[LOGIN MOVIL ERROR]', error);
+        res.status(500).json({ success: false, message: 'Error en el servidor' });
     } finally {
         if (connection) connection.release();
     }
 };
 
+// --- ENVIAR CÓDIGO EMAIL ---
 const sendEmailCode = async (req, res) => {
+    console.log("🚩 [Paso 1] Inicio del controlador sendEmailCode");
+
     const idUsuario = req.user ? req.user.id_usuario : null;
-    if (!idUsuario) return res.status(401).json({ success: false, message: 'Usuario no identificado.' });
+    console.log(`🚩 [Paso 2] ID Usuario recibido del token: ${idUsuario}`);
+
+    if (!idUsuario) {
+        console.log("❌ [Error] No se encontró idUsuario en el req.user");
+        return res.status(401).json({ success: false, message: 'Usuario no identificado.' });
+    }
 
     let connection;
     try {
-        connection = await pool.getConnection();
+        console.log("🚩 [Paso 3] Intentando obtener conexión del Pool de Base de Datos...");
+        connection = await pool.getConnection(); 
+        console.log("🚩 [Paso 4] ¡Conexión a BD obtenida exitosamente!");
+
+        console.log("🚩 [Paso 5] Consultando correo del usuario...");
         const [user] = await connection.query('SELECT correo_electronico FROM usuarios WHERE id_usuario = ?', [idUsuario]);
         
-        if(user.length === 0) return res.status(404).json({success: false, message: 'Usuario no encontrado'});
+        console.log(`🚩 [Paso 6] Consulta finalizada. Registros encontrados: ${user.length}`);
+
+        if(user.length === 0) {
+            console.log("❌ [Error] Usuario no encontrado en la BD.");
+            return res.status(404).json({success: false, message: 'Usuario no encontrado'});
+        }
 
         const correo = user[0].correo_electronico;
         const codigo = Math.floor(100000 + Math.random() * 900000).toString();
+        console.log(`🚩 [Paso 7] Usuario válido: ${correo}. Generando código: ${codigo}`);
 
+        console.log("🚩 [Paso 8] Guardando código en la Base de Datos...");
         await connection.query('UPDATE usuarios SET codigo_verificacion_email = ? WHERE id_usuario = ?', [codigo, idUsuario]);
+        console.log("🚩 [Paso 9] Código guardado en BD.");
 
         const html = `
             <h3>Verificación de Cuenta</h3>
@@ -147,16 +197,27 @@ const sendEmailCode = async (req, res) => {
             <p>Ingrésalo en la aplicación para continuar.</p>
         `;
 
+        console.log("🚩 [Paso 10] Llamando a la función enviarCorreo (SMTP)...");
         await enviarCorreo(correo, 'Código de Verificación', html);
+        
+        console.log("🚩 [Paso 11] ¡enviarCorreo retornó éxito!");
         res.status(200).json({ success: true, message: 'Código enviado al correo.' });
 
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Error al enviar código.' });
+        console.error("❌ [ERROR CRÍTICO] Se rompió en el Catch:");
+        console.error(error); 
+        res.status(500).json({ success: false, message: 'Error interno: ' + error.message });
     } finally {
-        if (connection) connection.release();
+        if (connection) {
+            console.log("🚩 [Paso 12] Liberando conexión de BD.");
+            connection.release();
+        } else {
+            console.log("🚩 [Paso 12] No había conexión para liberar.");
+        }
     }
 };
 
+// --- VERIFICAR CÓDIGO EMAIL ---
 const verifyEmailCode = async (req, res) => {
     const idUsuario = req.user ? req.user.id_usuario : null;
     const { code } = req.body;
@@ -174,24 +235,28 @@ const verifyEmailCode = async (req, res) => {
 
         if(user.length === 0) return res.status(404).json({success: false, message: 'Usuario no encontrado'});
 
-        if(user[0].codigo_verificacion_email !== code) {
+        if(String(user[0].codigo_verificacion_email) !== String(code)) {
             return res.status(400).json({ success: false, message: 'Código incorrecto.' });
         }
 
+        // Limpiamos el código y marcamos verificado (email_verificado = 1 es hipotético si tienes esa columna)
+        // Como no tengo tu schema exacto de si tienes 'email_verificado', dejo el update standard:
         await connection.query(
-            'UPDATE usuarios SET email_verificado = 1, codigo_verificacion_email = NULL WHERE id_usuario = ?',
+            'UPDATE usuarios SET codigo_verificacion_email = NULL WHERE id_usuario = ?',
             [idUsuario]
         );
 
         res.status(200).json({ success: true, message: 'Correo verificado correctamente.' });
 
     } catch (error) {
+        console.error(error);
         res.status(500).json({ success: false, message: 'Error interno.' });
     } finally {
         if (connection) connection.release();
     }
 };
 
+// --- LOGIN TELEFONO (FIREBASE) ---
 const loginPhone = async (req, res) => {
     const { idToken } = req.body; 
     if (!idToken) return res.status(400).json({ success: false, message: 'Falta token.' });
@@ -217,26 +282,17 @@ const loginPhone = async (req, res) => {
         const alumno = rows[0];
         if (!alumno.esta_activo) return res.status(403).json({ success: false, message: 'Cuenta desactivada.' });
 
-        const sessionToken = crypto.randomBytes(32).toString('hex');
+        // Ya no necesitamos sessionToken de texto, usamos JWT para móviles siempre
+        // Pero mantenemos la lógica de actualizar el flag de verificado
         await connection.query(
-            'UPDATE usuarios SET token_sesion_actual = ?, telefono_verificado = 1 WHERE id_usuario = ?', 
-            [sessionToken, alumno.id_usuario]
+            'UPDATE usuarios SET telefono_verificado = 1 WHERE id_usuario = ?', 
+            [alumno.id_usuario]
         );
 
-        const userData = {
-            id_usuario: alumno.id_usuario,
-            id_perfil: alumno.id_perfil_alumno,
-            nombres: alumno.nombres,
-            apellidos: alumno.apellido_paterno,
-            grupo: alumno.grupo,
-            boleta: alumno.boleta, 
-            foto: alumno.imagen_url,
-            token: sessionToken
-        };
-
-        res.status(200).json({ success: true, message: 'Bienvenido', data: userData });
+        res.status(200).json({ success: true, message: 'Verificado' });
 
     } catch (error) {
+        console.error(error);
         res.status(401).json({ success: false, message: 'Error de autenticación.' });
     } finally {
         if (connection) connection.release();

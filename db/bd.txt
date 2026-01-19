@@ -165,3 +165,8 @@ ADD COLUMN notify_falta BOOLEAN DEFAULT TRUE;
 ALTER TABLE usuarios 
 ADD COLUMN reset_token VARCHAR(64) NULL DEFAULT NULL,
 ADD COLUMN reset_expires DATETIME NULL DEFAULT NULL;
+
+ALTER TABLE asistencia 
+ADD COLUMN id_vehiculo_fk INT NULL,
+ADD CONSTRAINT fk_asistencia_vehiculo 
+FOREIGN KEY (id_vehiculo_fk) REFERENCES vehiculos(id_vehiculo) ON DELETE SET NULL;

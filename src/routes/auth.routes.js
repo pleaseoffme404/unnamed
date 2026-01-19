@@ -14,8 +14,8 @@ router.post('/logout', controller.logout);
 router.post('/forgot-password', controller.forgotPassword);
 router.post('/reset-password', controller.resetPassword);
 
-router.post('/send-code', controller.sendEmailCode);
-router.post('/verify-code', controller.verifyEmailCode);
+router.post('/send-code', isAuthenticated, controller.sendEmailCode);
+router.post('/verify-code', isAuthenticated, controller.verifyEmailCode);
 
 router.post('/register-admin', 
     isAuthenticated, 
@@ -24,7 +24,6 @@ router.post('/register-admin',
     handleUploadError, 
     controller.registerAdmin
 );
-
 
 router.post('/kiosk/lock', isAuthenticated, isAdmin, controller.lockKioskSession);
 router.post('/kiosk/unlock', isAuthenticated, isAdmin, controller.unlockKioskSession);
