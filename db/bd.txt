@@ -170,3 +170,6 @@ ALTER TABLE asistencia
 ADD COLUMN id_vehiculo_fk INT NULL,
 ADD CONSTRAINT fk_asistencia_vehiculo 
 FOREIGN KEY (id_vehiculo_fk) REFERENCES vehiculos(id_vehiculo) ON DELETE SET NULL;
+
+ALTER TABLE asistencia 
+MODIFY COLUMN metodo_entrada ENUM('qr', 'manual', 'qr_movil', 'qr_kiosco') DEFAULT 'qr';
