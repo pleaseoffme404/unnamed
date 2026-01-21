@@ -79,13 +79,12 @@ const registrarAsistenciaQR = async (req, res) => {
 const simularMovimiento = async (req, res) => {
     const { id_alumno, tipo } = req.body;
 
+
     if (!id_alumno) {
         return res.status(400).json({ success: false, message: 'Falta el ID del alumno.' });
     }
-    
-    await procesarMovimiento(id_alumno, 'manual', res, tipo);
+        await procesarMovimiento(id_alumno, 'manual', res, tipo);
 };
-
 const procesarMovimiento = async (idAlumno, metodo, res, tipoForzado = null) => {
     let connection;
     try {

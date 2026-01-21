@@ -167,21 +167,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
     simBtn.addEventListener('click', async () => {
         const id = simSelect.value;
-        if(!id || !currentToken) return;
+        
+        // Ya no necesitamos 'currentToken' para simular, solo el ID
+        if(!id) return;
+
+        // Feedback visual inmediato en el botón
+        const originalText = simBtn.textContent;
+        simBtn.textContent = "Procesando...";
+        simBtn.disabled = true;
 
         try {
-            const res = await apiFetch('/api/asistencia/registrar-qr', 'POST', {
-                qr_token: currentToken,
-                id_alumno: id
+
+         
+            const res = await apiFetch('/api/asistencia/simular', 'POST', {
+                id_alumno: id,
+                tipo: null 
             });
 
             if(res.success) {
-                showAccessResult(res, res.tipo, res.estatus_llegada, res.message);
+
+                showAccessResult(res, res.tipo, res.estatus_llegada || 'ok', res.message);
             } else {
                 alert(res.message);
             }
         } catch (e) {
-            alert(e.message);
+            console.error(e);
+            alert('Error al simular movimiento');
+        } finally {
+            simBtn.textContent = originalText;
+            simBtn.disabled = false;
         }
     });
 
