@@ -89,14 +89,18 @@ const loginMobile = async (req, res) => {
         connection = await pool.getConnection();
 
         // Join para obtener datos del alumno Y del usuario (contraseña)
+        // Aseguramos traer email_verificado y telefono_verificado si existen en tu BD
+        // Si no existen, tendrás que agregarlos o ajustar la lógica según tu schema real.
+        // Asumo que existen por el contexto previo.
         const [users] = await connection.query(
-    `SELECT u.id_usuario, u.contrasena_hash, u.rol, u.codigo_verificacion_email, u.telefono_verificado,
-            p.nombres, p.apellido_paterno, p.grupo, p.imagen_url, p.boleta
-     FROM usuarios u
-     JOIN perfil_alumno p ON u.id_usuario = p.id_usuario_fk
-     WHERE p.boleta = ? AND u.rol = 'alumno'`, 
-    [boleta]
-);
+            `SELECT u.id_usuario, u.contrasena_hash, u.rol, u.codigo_verificacion_email, 
+                    u.email_verificado, u.telefono_verificado,
+                    p.nombres, p.apellido_paterno, p.grupo, p.imagen_url, p.boleta, p.qr_token
+             FROM usuarios u
+             JOIN perfil_alumno p ON u.id_usuario = p.id_usuario_fk
+             WHERE p.boleta = ? AND u.rol = 'alumno'`, 
+            [boleta]
+        );
 
         if (users.length === 0) {
             console.log('[LOGIN MOVIL] Usuario no encontrado.');
@@ -126,25 +130,40 @@ const loginMobile = async (req, res) => {
             { expiresIn: '30d' } 
         );
 
+        // --- GESTIÓN DE QR TOKEN ---
+        let qrToken = user.qr_token; 
+
+        // Si el usuario no tiene token QR en la BD, le creamos uno ahora mismo
+        if (!qrToken) {
+            qrToken = crypto.randomUUID(); // Genera un UUID nuevo
+            await connection.query(
+                'UPDATE perfil_alumno SET qr_token = ? WHERE id_usuario_fk = ?',
+                [qrToken, user.id_usuario]
+            );
+        }
+        // ----------------------------------------
+
         console.log('[LOGIN MOVIL] Login exitoso. Token generado.');
 
         res.json({
-    success: true,
-    data: {
-        token: token,
-        alumno: { 
-            nombre_completo: user.nombres + " " + user.apellido_paterno,
-            boleta: user.boleta,
-            grupo: user.grupo || "Sin grupo",
-            foto: user.imagen_url || "", 
-            carrera: "Técnico en Programación" 
-        },
-        verificaciones: {
-            email: user.codigo_verificacion_email !== null || user.email_verificado === 1,
-            telefono: user.telefono_verificado === 1
-        }
-    }
-});
+            success: true,
+            data: {
+                token: token,
+                qr_token: qrToken, // Enviamos token QR al móvil
+                alumno: { 
+                    nombre_completo: user.nombres + " " + user.apellido_paterno,
+                    boleta: user.boleta,
+                    grupo: user.grupo || "Sin grupo",
+                    foto: user.imagen_url || "", 
+                    carrera: "Técnico en Programación" 
+                },
+                verificaciones: {
+                    // CORRECCIÓN: Solo es true si explícitamente es 1
+                    email: (user.email_verificado === 1),
+                    telefono: (user.telefono_verificado === 1)
+                }
+            }
+        });
 
     } catch (error) {
         console.error('[LOGIN MOVIL ERROR]', error);
@@ -154,7 +173,7 @@ const loginMobile = async (req, res) => {
     }
 };
 
-// --- ENVIAR CÓDIGO EMAIL ---
+// --- ENVIAR CÓDIGO EMAIL (VERIFICACIÓN) ---
 const sendEmailCode = async (req, res) => {
     console.log("🚩 [Paso 1] Inicio del controlador sendEmailCode");
 
@@ -222,7 +241,7 @@ const verifyEmailCode = async (req, res) => {
     const idUsuario = req.user ? req.user.id_usuario : null;
     const { code } = req.body;
 
-    if(!code) return res.status(400).json({success: false, message: 'Código requerido'});
+    if (!code) return res.status(400).json({ success: false, message: 'Código requerido' });
     if (!idUsuario) return res.status(401).json({ success: false, message: 'Usuario no identificado.' });
 
     let connection;
@@ -233,16 +252,15 @@ const verifyEmailCode = async (req, res) => {
             [idUsuario]
         );
 
-        if(user.length === 0) return res.status(404).json({success: false, message: 'Usuario no encontrado'});
+        if (user.length === 0) return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
 
-        if(String(user[0].codigo_verificacion_email) !== String(code)) {
+        if (String(user[0].codigo_verificacion_email) !== String(code)) {
             return res.status(400).json({ success: false, message: 'Código incorrecto.' });
         }
 
-        // Limpiamos el código y marcamos verificado (email_verificado = 1 es hipotético si tienes esa columna)
-        // Como no tengo tu schema exacto de si tienes 'email_verificado', dejo el update standard:
+        // Limpiamos código y marcamos verificado
         await connection.query(
-            'UPDATE usuarios SET codigo_verificacion_email = NULL WHERE id_usuario = ?',
+            'UPDATE usuarios SET codigo_verificacion_email = NULL, email_verificado = 1 WHERE id_usuario = ?',
             [idUsuario]
         );
 
@@ -282,8 +300,7 @@ const loginPhone = async (req, res) => {
         const alumno = rows[0];
         if (!alumno.esta_activo) return res.status(403).json({ success: false, message: 'Cuenta desactivada.' });
 
-        // Ya no necesitamos sessionToken de texto, usamos JWT para móviles siempre
-        // Pero mantenemos la lógica de actualizar el flag de verificado
+        // Marcamos verificado
         await connection.query(
             'UPDATE usuarios SET telefono_verificado = 1 WHERE id_usuario = ?', 
             [alumno.id_usuario]
@@ -415,7 +432,6 @@ const resetPassword = async (req, res) => {
     }
 };
 
-
 const lockKioskSession = (req, res) => {
     if (req.session) {
         req.session.kiosk_locked = true;
@@ -475,6 +491,100 @@ const unlockKioskSession = async (req, res) => {
     }
 };
 
+// --- RECUPERACIÓN PASSWORD MÓVIL (SOLICITAR) ---
+const solicitarRecuperacionMovil = async (req, res) => {
+    const { correo } = req.body;
+
+    if (!correo) {
+        return res.status(400).json({ success: false, message: 'Ingrese su correo electrónico.' });
+    }
+
+    let connection;
+    try {
+        connection = await pool.getConnection();
+
+        // Verificar si existe el usuario
+        const [users] = await connection.query(
+            'SELECT id_usuario FROM usuarios JOIN perfil_alumno ON id_usuario = id_usuario_fk WHERE correo_electronico = ?', 
+            [correo]
+        );
+
+        if (users.length === 0) {
+            return res.status(404).json({ success: false, message: 'Correo no registrado como alumno.' });
+        }
+
+        const usuario = users[0];
+        const codigo = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiracion = new Date(Date.now() + 3600000); // 1 hora
+
+        // Guardar token (borrando anteriores)
+        await connection.query('DELETE FROM password_reset_tokens WHERE id_usuario_fk = ?', [usuario.id_usuario]);
+        await connection.query(
+            'INSERT INTO password_reset_tokens (id_usuario_fk, token, expira_en) VALUES (?, ?, ?)',
+            [usuario.id_usuario, codigo, expiracion]
+        );
+
+        const html = `
+            <h3>Recuperación de Contraseña</h3>
+            <p>Usa el siguiente código en la aplicación para restablecer tu contraseña:</p>
+            <h1 style="color: #5865F2; letter-spacing: 5px;">${codigo}</h1>
+            <p>Válido por 1 hora.</p>
+        `;
+
+        await enviarCorreo(correo, 'Recuperar Contraseña', html);
+
+        res.json({ success: true, message: 'Código enviado a tu correo.' });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Error interno.' });
+    } finally {
+        if (connection) connection.release();
+    }
+};
+
+// --- RECUPERACIÓN PASSWORD MÓVIL (CAMBIAR) ---
+const ejecutarRecuperacionMovil = async (req, res) => {
+    const { correo, codigo, nuevaPassword } = req.body;
+
+    if (!correo || !codigo || !nuevaPassword) {
+        return res.status(400).json({ success: false, message: 'Faltan datos.' });
+    }
+
+    let connection;
+    try {
+        connection = await pool.getConnection();
+
+        // Validar código
+        const [tokens] = await connection.query(
+            `SELECT t.id, u.id_usuario 
+             FROM password_reset_tokens t
+             JOIN usuarios u ON t.id_usuario_fk = u.id_usuario
+             WHERE u.correo_electronico = ? AND t.token = ? AND t.expira_en > NOW()`,
+            [correo, codigo]
+        );
+
+        if (tokens.length === 0) {
+            return res.status(400).json({ success: false, message: 'Código inválido o expirado.' });
+        }
+
+        const idUsuario = tokens[0].id_usuario;
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash(nuevaPassword, salt);
+
+        await connection.query('UPDATE usuarios SET contrasena_hash = ? WHERE id_usuario = ?', [hash, idUsuario]);
+        await connection.query('DELETE FROM password_reset_tokens WHERE id = ?', [tokens[0].id]);
+
+        res.json({ success: true, message: 'Contraseña actualizada correctamente.' });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Error interno.' });
+    } finally {
+        if (connection) connection.release();
+    }
+};
+
 module.exports = {
     login,
     loginMobile,
@@ -487,5 +597,7 @@ module.exports = {
     forgotPassword,
     resetPassword,
     lockKioskSession,
-    unlockKioskSession
+    unlockKioskSession,
+    solicitarRecuperacionMovil,
+    ejecutarRecuperacionMovil
 };

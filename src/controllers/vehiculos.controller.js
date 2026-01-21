@@ -6,7 +6,7 @@ const createVehiculo = async (req, res) => {
     let imageUrl = null;
 
     if (!id_perfil_alumno_fk || !tipo) {
-        return res.status(400).json({ success: false, message: 'El ID del alumno y el tipo de vehículo son requeridos.' });
+        return res.status(400).json({ success: false, message: 'Faltan datos requeridos.' });
     }
 
     let connection;
@@ -117,13 +117,11 @@ const deleteVehiculo = async (req, res) => {
 };
 
 const obtenerMisVehiculos = async (req, res) => {
-    // Obtenemos el ID del usuario desde el token (req.user)
     const idUsuario = req.user.id_usuario;
 
     let connection;
     try {
         connection = await pool.getConnection();
-        // Hacemos JOIN para llegar a los vehículos desde el usuario
         const [rows] = await connection.query(
             `SELECT v.id_vehiculo, v.tipo, v.descripcion, v.imagen_url
              FROM vehiculos v
@@ -141,10 +139,10 @@ const obtenerMisVehiculos = async (req, res) => {
     }
 };
 
-// --- NUEVA FUNCIÓN PARA MÓVIL (POST) ---
 const registrarMiVehiculo = async (req, res) => {
     const idUsuario = req.user.id_usuario;
     const { tipo, descripcion } = req.body;
+    let imageUrl = null;
 
     if (!tipo || !descripcion) {
         return res.status(400).json({ success: false, message: 'Faltan datos' });
@@ -154,7 +152,6 @@ const registrarMiVehiculo = async (req, res) => {
     try {
         connection = await pool.getConnection();
 
-        // 1. Buscar el perfil de alumno asociado a este usuario
         const [alumno] = await connection.query(
             'SELECT id_perfil_alumno FROM perfil_alumno WHERE id_usuario_fk = ?', 
             [idUsuario]
@@ -166,17 +163,100 @@ const registrarMiVehiculo = async (req, res) => {
 
         const idAlumno = alumno[0].id_perfil_alumno;
 
-        // 2. Insertar el vehículo (Sin imagen por ahora para simplificar el móvil)
+        if (req.file) {
+            imageUrl = await saveImage(req.file, 'vehiculos', `${idAlumno}_${Date.now()}`);
+        }
+
         await connection.query(
-            'INSERT INTO vehiculos (id_perfil_alumno_fk, tipo, descripcion) VALUES (?, ?, ?)',
-            [idAlumno, tipo, descripcion]
+            'INSERT INTO vehiculos (id_perfil_alumno_fk, tipo, descripcion, imagen_url) VALUES (?, ?, ?, ?)',
+            [idAlumno, tipo, descripcion, imageUrl]
         );
 
         res.status(201).json({ success: true, message: 'Vehículo registrado exitosamente' });
 
     } catch (error) {
         console.error(error);
+        if (imageUrl) await deleteImage(imageUrl);
         res.status(500).json({ success: false, message: 'Error al registrar' });
+    } finally {
+        if (connection) connection.release();
+    }
+};
+
+const actualizarMiVehiculo = async (req, res) => {
+    const { id } = req.params;
+    const { tipo, descripcion } = req.body;
+    const idUsuario = req.user.id_usuario;
+
+    let connection;
+    try {
+        connection = await pool.getConnection();
+
+        const [vehiculo] = await connection.query(
+            `SELECT v.id_vehiculo, v.imagen_url 
+             FROM vehiculos v
+             JOIN perfil_alumno p ON v.id_perfil_alumno_fk = p.id_perfil_alumno
+             WHERE v.id_vehiculo = ? AND p.id_usuario_fk = ?`,
+            [id, idUsuario]
+        );
+
+        if (vehiculo.length === 0) {
+            return res.status(404).json({ success: false, message: 'Vehículo no encontrado o no autorizado.' });
+        }
+
+        let nuevaImagen = vehiculo[0].imagen_url;
+
+        if (req.file) {
+            if (nuevaImagen) await deleteImage(nuevaImagen); 
+            nuevaImagen = await saveImage(req.file, 'vehiculos', `upd_${id}_${Date.now()}`);
+        }
+
+        await connection.query(
+            'UPDATE vehiculos SET tipo = ?, descripcion = ?, imagen_url = ? WHERE id_vehiculo = ?',
+            [tipo, descripcion, nuevaImagen, id]
+        );
+
+        res.json({ success: true, message: 'Vehículo actualizado.' });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Error al actualizar' });
+    } finally {
+        if (connection) connection.release();
+    }
+};
+
+const eliminarMiVehiculo = async (req, res) => {
+    const { id } = req.params;
+    const idUsuario = req.user.id_usuario;
+
+    let connection;
+    try {
+        connection = await pool.getConnection();
+
+        const [vehiculo] = await connection.query(
+            `SELECT v.id_vehiculo, v.imagen_url 
+             FROM vehiculos v
+             JOIN perfil_alumno p ON v.id_perfil_alumno_fk = p.id_perfil_alumno
+             WHERE v.id_vehiculo = ? AND p.id_usuario_fk = ?`,
+            [id, idUsuario]
+        );
+
+        if (vehiculo.length === 0) {
+            return res.status(404).json({ success: false, message: 'Vehículo no encontrado o no autorizado.' });
+        }
+
+        if (vehiculo[0].imagen_url) {
+            await deleteImage(vehiculo[0].imagen_url);
+        }
+
+        await connection.query('DELETE FROM vehiculos WHERE id_vehiculo = ?', [id]);
+
+        res.json({ success: true, message: 'Vehículo eliminado.' });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Error al eliminar' });
     } finally {
         if (connection) connection.release();
     }
@@ -188,5 +268,7 @@ module.exports = {
     updateVehiculo,
     deleteVehiculo,
     obtenerMisVehiculos,
-    registrarMiVehiculo
+    registrarMiVehiculo,
+    actualizarMiVehiculo,
+    eliminarMiVehiculo
 };
