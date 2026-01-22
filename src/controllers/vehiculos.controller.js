@@ -185,23 +185,27 @@ const registrarMiVehiculo = async (req, res) => {
 
 const actualizarMiVehiculo = async (req, res) => {
     const { id } = req.params;
-    const { tipo, descripcion } = req.body;
+    const { tipo, descripcion } = req.body; 
     const idUsuario = req.user.id_usuario;
+
+    console.log(`[PUT] Intentando actualizar vehículo ID: ${id} | Usuario: ${idUsuario}`);
+    console.log(`[PUT] Datos recibidos:`, { tipo, descripcion, file: req.file ? 'SI' : 'NO' });
 
     let connection;
     try {
         connection = await pool.getConnection();
 
-        const [vehiculo] = await connection.query(
-            `SELECT v.id_vehiculo, v.imagen_url 
-             FROM vehiculos v
-             JOIN perfil_alumno p ON v.id_perfil_alumno_fk = p.id_perfil_alumno
-             WHERE v.id_vehiculo = ? AND p.id_usuario_fk = ?`,
-            [id, idUsuario]
-        );
+        const queryCheck = `
+            SELECT v.id_vehiculo, v.imagen_url 
+            FROM vehiculos v
+            JOIN perfil_alumno p ON v.id_perfil_alumno_fk = p.id_perfil_alumno
+            WHERE v.id_vehiculo = ? AND p.id_usuario_fk = ?`;
+
+        const [vehiculo] = await connection.query(queryCheck, [id, idUsuario]);
 
         if (vehiculo.length === 0) {
-            return res.status(404).json({ success: false, message: 'Vehículo no encontrado o no autorizado.' });
+            console.log("❌ [PUT] Falló: El vehículo no existe o no pertenece a este usuario.");
+            return res.status(404).json({ success: false, message: 'No autorizado o no encontrado.' });
         }
 
         let nuevaImagen = vehiculo[0].imagen_url;
@@ -216,10 +220,11 @@ const actualizarMiVehiculo = async (req, res) => {
             [tipo, descripcion, nuevaImagen, id]
         );
 
+        console.log("✅ [PUT] Vehículo actualizado correctamente.");
         res.json({ success: true, message: 'Vehículo actualizado.' });
 
     } catch (error) {
-        console.error(error);
+        console.error("❌ [PUT] Error interno:", error);
         res.status(500).json({ success: false, message: 'Error al actualizar' });
     } finally {
         if (connection) connection.release();
@@ -229,6 +234,8 @@ const actualizarMiVehiculo = async (req, res) => {
 const eliminarMiVehiculo = async (req, res) => {
     const { id } = req.params;
     const idUsuario = req.user.id_usuario;
+
+    console.log(`[DELETE] Intentando borrar vehículo ID: ${id} | Usuario: ${idUsuario}`);
 
     let connection;
     try {
@@ -243,7 +250,8 @@ const eliminarMiVehiculo = async (req, res) => {
         );
 
         if (vehiculo.length === 0) {
-            return res.status(404).json({ success: false, message: 'Vehículo no encontrado o no autorizado.' });
+            console.log("❌ [DELETE] Falló: Vehículo ajeno o inexistente.");
+            return res.status(404).json({ success: false, message: 'No autorizado.' });
         }
 
         if (vehiculo[0].imagen_url) {
@@ -252,10 +260,11 @@ const eliminarMiVehiculo = async (req, res) => {
 
         await connection.query('DELETE FROM vehiculos WHERE id_vehiculo = ?', [id]);
 
+        console.log("✅ [DELETE] Vehículo eliminado.");
         res.json({ success: true, message: 'Vehículo eliminado.' });
 
     } catch (error) {
-        console.error(error);
+        console.error("❌ [DELETE] Error interno:", error);
         res.status(500).json({ success: false, message: 'Error al eliminar' });
     } finally {
         if (connection) connection.release();
